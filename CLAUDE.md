@@ -100,7 +100,7 @@ The API enforces it (decision [0040](qbank-api/doc/decisions/0040-paper-lifecycl
 
 A roadmap that spans repos lives in the repo that owns the bulk of the work, names its owner repos up front, and follows [INTEGRATION.md](INTEGRATION.md) for the cross-repo seams. `qbank-deploy` has no `CLAUDE.md` of its own — this rule covers it. Worked example: [qbank-learner/docs/roadmaps/README.md](qbank-learner/docs/roadmaps/README.md).
 
-A roadmap that belongs to the workspace as a whole (every repo at once, or the meta files here) lives in [docs/roadmaps/](docs/roadmaps/) in this root repo. Current: [rename-to-qbank.md](docs/roadmaps/rename-to-qbank.md), the plan to rename the repos from `psc-archiver-*` to `qbank-*` and to decouple the user-visible brand from the code first.
+A roadmap that belongs to the workspace as a whole (every repo at once, or the meta files here) lives in [docs/roadmaps/](docs/roadmaps/) in this root repo. Current: [rename-to-qbank.md](docs/roadmaps/rename-to-qbank.md), the plan to rename the repos from `psc-archiver-*` to `qbank-*` and to decouple the user-visible brand from the code first. Next: [qfoundry-brand-and-hostnames.md](docs/roadmaps/qfoundry-brand-and-hostnames.md), the plan to apply the chosen brand (QFoundry, `qfoundry.in`), move the hosts to `qfoundry.in` / `studio.` / `prep.` / `writer.`, and carve the marketing pages out of the admin app into a sixth repo, `qbank-homepage`. It supersedes the rename roadmap's Phase 4.
 
 The writer portal's roadmap lives in the repo that owns most of its work: [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md). It also changes the workspace root (Phase 0), `qbank-api` (Phase 7, server-side writer limits) and `qbank-deploy` (Phases 6 and 8).
 

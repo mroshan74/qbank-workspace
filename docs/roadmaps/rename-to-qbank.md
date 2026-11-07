@@ -7,7 +7,7 @@
 | 1. Decouple the brand from the code | done: admin `7023430`, api `339c181`, learner `6bde8ba` |
 | 2. Rename the codename locally and on GitHub | done: api `deb1230`, admin `b5478c7`, learner `e2d650e`, deploy `003166f`, root (the commit that carries this line). Local stack verified: four containers healthy, 163 papers seeded, both apps answer readiness, the learner font serves. Nothing pushed yet |
 | 3. Server cutover | repo side done and committed (deploy, api, admin, learner), not pushed; server side pending, runbook in `qbank-deploy/QUICKSTART.md` |
-| 4. Apply the brand (when it is chosen) | not started |
+| 4. Apply the brand (when it is chosen) | superseded 2026-11-07: the brand is QFoundry on `qfoundry.in`, planned in [qfoundry-brand-and-hostnames.md](qfoundry-brand-and-hostnames.md). Phase 3's server steps run as step 0 of that roadmap's Phase 4 and are ticked here when they do |
 
 **Owner repos:** this workspace root (it owns `repos.json`, which defines the folder names), plus `psc-archiver-api`, `psc-archiver-admin`, `psc-archiver-client` and `psc-archiver-deploy`. `qbank-writer` is already named for the codename and keeps its brand in one constant from birth, so it is never renamed; it appears below only where its docs name the four siblings and where its deployment meets the server cutover. Phase 1 lives in the three older app repos; Phase 2 touches all six checkouts; Phase 3 is the deploy repo and the server.
 
@@ -103,7 +103,7 @@ Order matters: `deploy.sh` pulls whatever image name the server `.env` names, an
 - [x] The three app workflows' `script:` line calls `/opt/qbank/scripts/deploy.sh`. The api's `doc/08-deployment.md` and the admin's deployment roadmap say `/opt/qbank` too.
 - [x] The one-time runbook is in `qbank-deploy/QUICKSTART.md` ("One-time: moving the server from `psc-archiver` to `qbank`"); delete that section after the cutover.
 
-**Server side, not done (needs SSH to the VPS). Order matters, because the server's `.env` names the images `deploy.sh` pulls:**
+**Server side, not done (needs SSH to the VPS). Order matters, because the server's `.env` names the images `deploy.sh` pulls.** Since 2026-11-07 these steps run as step 0 of Phase 4 in [qfoundry-brand-and-hostnames.md](qfoundry-brand-and-hostnames.md), in the same maintenance window as the move to the `qfoundry.in` hosts; tick them here when that phase runs.
 
 - [ ] Push `qbank-deploy`, then `qbank-api`, `qbank-admin` and `qbank-learner`. CI builds `ghcr.io/mroshan74/qbank-*:<sha>` and `:latest`; the deploy step fails because `/opt/qbank` does not exist yet, which is expected. **Do not push the app repos before the deploy repo**, and expect nothing to deploy until the next step.
 - [ ] On the server, with no AI-tagging job in flight: `docker compose -f compose.prod.yml -p psc-archiver down` in `/opt/psc-archiver`; `sudo mv /opt/psc-archiver /opt/qbank`; `git remote set-url origin https://github.com/mroshan74/qbank-deploy.git` and `git pull --ff-only` there; in `.env` set `API_IMAGE`, `WEB_IMAGE`, `LEARNER_IMAGE` to the `qbank-*` names and the database in `MONGODB_URI` to `qbank`.
@@ -115,11 +115,9 @@ Order matters: `deploy.sh` pulls whatever image name the server `.env` names, an
 
 **Exit criteria:** every host serves a `ghcr.io/mroshan74/qbank-*` image, and a CI deploy of each deployed service runs green.
 
-## Phase 4: apply the brand (when it is chosen)
+## Phase 4: apply the brand (superseded)
 
-- [ ] Change `APP_NAME` in the four `site.js` / constant files (admin, client, api, `qbank-writer`), the Twitter handle, the social links and the support emails.
-- [ ] Plan hostnames and DNS as their own roadmap (certificates, `ADMIN_HOST` / `LEARNER_HOST` / `WRITER_HOST`, `CLIENT_URL`).
-- [ ] Legal wording that names Kerala PSC as a factual disclaimer stays.
+The brand was chosen on 2026-11-07: **QFoundry**, on `qfoundry.in` (`studio.` for the admin, `prep.` for the learner, `writer.` for the writer portal, and a new standalone marketing repo, `qbank-homepage`, on the apex). Everything this phase was going to do, the constants, the emails, the social links, the hostnames and DNS, is planned and tracked in [qfoundry-brand-and-hostnames.md](qfoundry-brand-and-hostnames.md); nothing is ticked here. The one rule that carries over unchanged: legal wording that names Kerala PSC as a factual disclaimer stays.
 
 ## Risks and non-goals
 

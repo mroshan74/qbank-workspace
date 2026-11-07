@@ -39,7 +39,7 @@ Per-repo detail: [qbank-learner/docs/arch/12-user-facing-copy.md](qbank-learner/
 
 A roadmap that spans repos lives in the repo owning the bulk of the work, names its owner repos up front, and follows [INTEGRATION.md](INTEGRATION.md) for the cross-repo seams. `qbank-deploy` has no agent file of its own — this rule covers it. Worked example: [qbank-learner/docs/roadmaps/README.md](qbank-learner/docs/roadmaps/README.md).
 
-Workspace-wide roadmaps live in [docs/roadmaps/](docs/roadmaps/) here ([rename-to-qbank.md](docs/roadmaps/rename-to-qbank.md)). The writer portal's lives in its own repo, [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md), and also changes this root, `qbank-api` (Phase 7) and `qbank-deploy` (Phases 6 and 8).
+Workspace-wide roadmaps live in [docs/roadmaps/](docs/roadmaps/) here ([rename-to-qbank.md](docs/roadmaps/rename-to-qbank.md), and its successor [qfoundry-brand-and-hostnames.md](docs/roadmaps/qfoundry-brand-and-hostnames.md): the QFoundry brand, the `qfoundry.in` hosts and the new `qbank-homepage` marketing repo). The writer portal's lives in its own repo, [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md), and also changes this root, `qbank-api` (Phase 7) and `qbank-deploy` (Phases 6 and 8).
 
 ## Documentation sync rule
 
