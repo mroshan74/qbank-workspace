@@ -1,6 +1,6 @@
 # Roadmap: QFoundry, the brand and the hostnames
 
-**Status (2026-11-07):** Phases 0 to 3 done: every screen says QFoundry with Studio / Writer / Prep beside it; the marketing pages live in the new `qbank-homepage` repo and the admin serves nothing public but `/login`; the deploy repo, the workspace meta files, the six hook copies and every doc carry the `homepage` tier and the `qfoundry.in` hosts, verified on the six-service prod-parity stack. **Phase 4 (the server cutover) needs DNS, GitHub secrets and SSH and is the next step; Phase 5 is design and account work.** Nothing is pushed from any repo until Phase 4, by design (decision 2); the GitHub repo `mroshan74/qbank-homepage` does not exist yet and the local repo has no `origin` (creating it needs the owner's GitHub access, Phase 4).
+**Status (2026-11-07):** Phases 0 to 3 done: every screen says QFoundry with Studio / Writer / Prep beside it; the marketing pages live in the new `qbank-homepage` repo and the admin serves nothing public but `/login`; the deploy repo, the workspace meta files, the six hook copies and every doc carry the `homepage` tier and the `qfoundry.in` hosts, verified on the six-service prod-parity stack. **Phase 4 is now a first deploy on a new server** (the old VPS was deleted on 2026-11-07): provisioning, DNS, secrets on all five app repos, the pushes in order, seed, verify. It needs the owner's server and GitHub access and is the next step; Phase 5 is design and account work. Nothing is pushed from any repo yet (decision 2); `mroshan74/qbank-homepage` exists on GitHub and is the local repo's `origin`.
 
 | Phase | Scope | State |
 |---|---|---|
@@ -8,7 +8,7 @@
 | 1 | Brand constants and hardcoded leftovers in the four app repos and the API | done |
 | 2 | Scaffold `qbank-homepage`, move the marketing and legal pages out of `qbank-admin` | done |
 | 3 | Deploy repo: `homepage` service, new keys, scripts, local stack :8083, workspace meta, hook copies, hostname doc sweep | done |
-| 4 | Server cutover: DNS, `/opt/qbank/.env`, certificates, the order of pushes, verification, cleanup | not started |
+| 4 | First deploy on the new server: provisioning, DNS, `/opt/qbank/.env`, secrets, the order of pushes, seed, verification, cleanup | GitHub repo done; the rest needs the new VPS |
 | 5 | Assets and external accounts (non-code, tracked here) | not started |
 
 **Owner repos:** this workspace root (the roadmap spans every repo), plus `qbank-api`, `qbank-admin`, `qbank-learner`, `qbank-writer`, `qbank-deploy`, and a new sixth repo, `qbank-homepage`. It is the successor of [rename-to-qbank.md](rename-to-qbank.md) Phase 4 and absorbs the server side of [qbank-writer/docs/roadmaps/writer-portal.md](../../qbank-writer/docs/roadmaps/writer-portal.md) Phase 8.
@@ -36,8 +36,8 @@ What the investigation (2026-11-07) found:
 
 ## Decisions taken up front
 
-1. **This roadmap is rename-to-qbank's Phase 4 plus the hostname roadmap its Phase 4 asked for.** Rename Phase 3's server steps run as **step 0 of Phase 4 here** (one maintenance window, one reseed); its boxes stay in rename-to-qbank.md and are ticked there. The writer's Phase 8 server steps are absorbed into Phase 4 here with host `writer.qfoundry.in`.
-2. **Nothing is pushed until Phase 4.** Every workflow's SSH step calls `/opt/qbank/scripts/deploy.sh`, which does not exist on the server yet. Phases 1 to 3 are committed locally; Phase 4 pushes in a fixed order.
+1. **This roadmap is rename-to-qbank's Phase 4 plus the hostname roadmap its Phase 4 asked for.** Rename Phase 3's server steps were to run as step 0 of Phase 4 here; **the old VPS was deleted on 2026-11-07**, so that move is moot and Phase 4 is a clean first deploy (rename-to-qbank.md records what cleanup remains off-server). The writer's Phase 8 server steps are absorbed into Phase 4 here with host `writer.qfoundry.in`.
+2. **Nothing is pushed until Phase 4.** Every workflow's SSH step calls `/opt/qbank/scripts/deploy.sh` on a server that does not exist yet. Phases 1 to 3 are committed locally; Phase 4 pushes in a fixed order once `setup-app.sh` has run on the new box.
 3. **One product name, a qualifier beside it.** `APP_NAME = "QFoundry"` in all four constants. A separate `APP_ROLE` constant carries the door: `"Studio"` (admin), `"Writer"` (writer), `"Prep"` (learner), none in the homepage. It appears only in the tab title (`QFoundry Studio`), the logo sub-line and the webmanifest `name`, never as a second product name. Confirmed 2026-11-07.
 4. **Emails and the operator's name.** Two mailboxes, confirmed 2026-11-07: `support@qfoundry.in` and `privacy@qfoundry.in`. **Awiztec goes.** "Awiztec Technologies" is not a registered company, so the Terms sentence "owned by Awiztec Technologies" (`Terms.jsx:213`) asserts ownership by an entity that does not legally exist; it becomes "owned by {APP_NAME}" until a legal entity is registered, at which point one sentence in Terms names it (a Phase 5 open item, not a blocker). The business-inquiries address on Contact (`Contact.jsx:34-35`) and the licensing address on Organization Rules (`OrganizationRules.jsx:237-238`), both `contact@awiztec.com`, read `SUPPORT_EMAIL`: one brand, one domain, two mailboxes.
 5. **Social handles are unknown.** The homepage's `TWITTER_HANDLE`, `TELEGRAM_*`, `INSTAGRAM_URL` become empty strings and every social link renders only when its constant is non-empty. Filling them is one line each (Phase 5).
@@ -154,21 +154,20 @@ Two commits in two repos; the admin's is **pushed only after the homepage is liv
 
 **Exit (met 2026-11-07):** `grep -rl trynbuild --exclude-dir=node_modules .` returns the two roadmaps and `qbank-deploy/QUICKSTART.md`, whose new cutover section names the old records so Phase 4 can remove them (the section is deleted after it runs); `grep -rn "archiver.example\|learner.example" qbank-deploy` empty.
 
-## Phase 4: server cutover (one maintenance window)
+## Phase 4: first deploy on a new server
 
-Order matters: a missing `.env` key stops every deploy; the workflows call `/opt/qbank/...`; the admin push removes the marketing pages, so the homepage must be live first.
+**Revised 2026-11-07:** the old VPS was deleted and a new one is being provisioned, so this is a clean bootstrap, not a cutover. There is no `/opt/psc-archiver` to move, no database to reseed in place and no live host to keep up; rename-to-qbank's Phase 3 server steps are moot (its roadmap says so). The paste-ready sequence is `qbank-deploy/QUICKSTART.md`, "First deploy on a new server"; the boxes here are the checklist.
 
-- [ ] **Step 0, if the server is still `/opt/psc-archiver`:** run rename-to-qbank Phase 3's server steps (down, `mv`, remote, `qbank-*` images, `qbank` database); do not seed yet; tick those boxes there.
-- [ ] **DNS** for `qfoundry.in`: A `@`, `www`, `studio`, `prep`, `writer` to the VPS IP (low TTL); `dig +short` all five. Leave trynbuild records until verified.
-- [ ] **GitHub:** create private `mroshan74/qbank-homepage` (`gh repo create mroshan74/qbank-homepage --private`, then `git -C qbank-homepage remote add origin https://github.com/mroshan74/qbank-homepage.git`); set the four `VPS_*` secrets on `qbank-homepage` and `qbank-writer`.
-- [ ] **Server `.env`:** `ADMIN_HOST=studio.qfoundry.in`, `LEARNER_HOST=prep.qfoundry.in`, `WRITER_HOST=writer.qfoundry.in`, `WRITER_TAG/IMAGE` if absent, `HOMEPAGE_HOST=qfoundry.in`, `HOMEPAGE_TAG=latest`, `HOMEPAGE_IMAGE=ghcr.io/mroshan74/qbank-homepage`, `CLIENT_URL=https://studio.qfoundry.in,https://prep.qfoundry.in,https://writer.qfoundry.in`.
-- [ ] **Push `qbank-deploy`**, then `git -C /opt/qbank pull --ff-only`.
-- [ ] **Push app repos in order:** `qbank-api`, `qbank-homepage`, `qbank-learner`, `qbank-writer`, `qbank-admin` last. Watch `docker logs traefik` for ACME. If step 0 ran, `./scripts/deploy-latest.sh --seed` afterwards, then pin tags per the rename runbook.
-- [ ] **Verify:** `curl -sI https://www.qfoundry.in/` is a 301 to the apex; `/healthz` on the homepage; `/pricing` renders with the apex `og:url`; `/api/readyz` through the three app nginx tiers; `studio/` lands on `/login`; a staff, a writer and a learner sign-in; a community-organization PDF shows the new attribution; one CI deploy per service green; `rollback.sh homepage <tag>` works.
-- [ ] **GHCR:** `qbank-homepage` and `qbank-writer` packages private.
-- [ ] **Cleanup:** remove the trynbuild DNS records (decision 6: no redirects); delete the runbook sections from `QUICKSTART.md`; rename Phase 3 cleanup (old volume, `pscarchiver` database, old GHCR packages after a week); tick the writer roadmap's Phase 8 box.
+- [x] **GitHub:** `mroshan74/qbank-homepage` exists (private, created by the owner 2026-11-07) and is the local repo's `origin`.
+- [ ] **Provision** the box: `INSTRUCTION.md` steps 1 to 3 (harden, SSH keys, Docker permissions).
+- [ ] **DNS** for `qfoundry.in` on the new IP: A `@`, `www`, `studio`, `prep`, `writer` (low TTL); `dig +short` all five. The apex and `www` share one certificate, so both must resolve before the homepage's first deploy.
+- [ ] **Push `qbank-deploy`** (no workflow, nothing deploys); on the server run `scripts/setup-app.sh` as the account CI will use, fill `/opt/qbank/.env` (the four hosts, `CLIENT_URL` with the three app origins, a fresh `qbank` database on Atlas, the secrets, OTP provider, seed account, every `*_TAG=latest`), bring Traefik up, `docker login ghcr.io`.
+- [ ] **Secrets** on all five app repos (`qbank-api`, `qbank-admin`, `qbank-learner`, `qbank-writer`, `qbank-homepage`): `VPS_HOST` (the new IP), `VPS_USER`, `VPS_SSH_KEY`, `VPS_SSH_KEY_PASSPHRASE`. The three older repos still hold values for the deleted server.
+- [ ] **Push the app repos in order:** `qbank-api`, `qbank-homepage`, `qbank-learner`, `qbank-writer`, `qbank-admin`. Each CI run builds `:<sha>` and `:latest` and runs `deploy.sh <svc> <sha>`; the first run of each creates its container and Traefik requests its certificate (watch `docker logs traefik`).
+- [ ] **Seed** the empty database (QUICKSTART section 3), then **verify**: `curl -sI https://www.qfoundry.in/` is a 301 to the apex; `/healthz` on the homepage; `/pricing` renders with the apex `og:url`; `/api/readyz` through the three app tiers; `studio/` lands on `/login`; a staff, a writer and a learner sign-in; a community-organization PDF says "Prepared with QFoundry"; `rollback.sh homepage <sha>` works. GHCR packages private (check once).
+- [ ] **Cleanup elsewhere:** drop the `pscarchiver` database in Atlas, delete the old `psc-archiver-*` GHCR packages, remove the trynbuild DNS records (decision 6: no redirects); delete the first-deploy section from `QUICKSTART.md`; tick the writer roadmap's Phase 8 box and rename-to-qbank's remaining cleanup boxes.
 
-**Exit:** four hosts on Let's Encrypt with no warning; `www` redirects; every service deployed by its own CI run; old hosts gone from DNS; `/opt/qbank/.env` has no `trynbuild` and no `psc-archiver`.
+**Exit:** four hosts on Let's Encrypt with no warning; `www` redirects; every service deployed by its own CI run; the seeded database answers a staff login; nothing anywhere names `trynbuild` or `psc-archiver` except the two roadmaps.
 
 ## Phase 5: assets and external accounts (non-code, tracked here)
 
@@ -199,9 +198,9 @@ Order matters: a missing `.env` key stops every deploy; the workflows call `/opt
 - **A missing `.env` key stops every deploy**: `HOMEPAGE_*` and `WRITER_*` go into `/opt/qbank/.env` before the deploy repo is pulled on the server.
 - **`CLIENT_URL` replaces the fallback**: all three app origins, every time; the homepage is deliberately absent.
 - **The apex certificate needs both names**: add `@` and `www` A records before the first `homepage` deploy.
-- **Rename Phase 3 must not be lost**: its boxes are ticked when Phase 4 step 0 runs; nothing is pushed from any app repo before it.
-- **Window between the deploy-repo pull and the DNS flip**: old hosts answer a Traefik 404; kept short by doing DNS first. MVP, accepted.
-- **Admin push ordering**: the admin is pushed last so the marketing pages never disappear.
+- **Rename Phase 3 is moot on the server** (the old VPS is gone); what remains of it is off-server cleanup (Atlas database, old GHCR packages) and is listed in Phase 4 here.
+- **The three older repos hold secrets for the deleted server**: a push before the new `VPS_*` values are set builds the image fine and fails only at the SSH step, which is harmless but noisy. Set the secrets first.
+- **Admin push ordering**: the admin is pushed last so the homepage is live before the admin stops serving the marketing pages.
 - **Traefik names are provider-global**: `homepage`, `homepage-www-to-apex` must stay unique; `archiver` stays as the admin's router.
 - **Windows**: scripts keep LF; `pnpm install` in `qbank-homepage` before the local stack build; the hook is tested by hand (it fails silently).
 - **Learner is whitelabelled by design**: the brand barely shows there; the OTP sender name is outside code.
