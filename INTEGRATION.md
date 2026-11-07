@@ -2,7 +2,7 @@
 
 **This is the single source of truth for the seams between the repos.** The root `AGENTS.md`/`CLAUDE.md` and every sub-project "Sibling project" section link here. When a change spans a frontend and the backend, read this file first.
 
-**One API, three frontends.** They serve different audiences and are never interchangeable:
+**One API, three app frontends, and a static marketing site.** They serve different audiences and are never interchangeable:
 
 | Repo | Role | Stack | Governs itself via |
 |------|------|-------|--------------------|
@@ -42,27 +42,30 @@ development (cross-origin)
     axios baseURL = "/api"         forwards /api to :5000, so it needs
                                    no CLIENT_URL entry
 
-production (same-origin per host — three hostnames, three certificates)
-  browser ──HTTPS──▶ traefik ──┬─ Host(ADMIN_HOST)   archiver.trynbuild.com
+production (same-origin per host — four hostnames, four certificates)
+  browser ──HTTPS──▶ traefik ──┬─ Host(HOMEPAGE_HOST) qfoundry.in (+ www. ──301──▶ apex)
+                               │    homepage (nginx) ── marketing site, static, no /api
+                               │
+                               ├─ Host(ADMIN_HOST)   studio.qfoundry.in
                                │    web (nginx) ── admin SPA
                                │          ├───── /api/* ──proxy──┐
                                │          └───── /fonts/* (PDF faces)
                                │                                 │
-                               ├─ Host(LEARNER_HOST) learner.trynbuild.com
+                               ├─ Host(LEARNER_HOST) prep.qfoundry.in
                                │    learner (nginx) ── learner SPA
                                │           ├───── /api/* ──proxy──┤
                                │           └───── /fonts/* (PDF faces)
                                │                                  │
-                               └─ Host(WRITER_HOST)  writer.trynbuild.com (proposed)
+                               └─ Host(WRITER_HOST)  writer.qfoundry.in
                                     writer (nginx) ── writer SPA
                                            ├───── /api/* ──proxy──┤
                                            └───── /fonts/* (Malayalam)
                                                                   ▼
-    baseURL = "/api" in all three      api :5000 — not routed by traefik,
+    baseURL = "/api" in all three apps api :5000 — not routed by traefik,
     (no backend host in any bundle)    publishes no host port
 ```
 
-Two SPAs cannot both own `/` behind one origin, which is why the learner app is a second hostname rather than a path prefix. `qbank-writer` is a third `Host()` router the same way (Phase 8 of its roadmap, prepared in the repos 2026-11-07; the server side follows the deploy QUICKSTART's "Adding the writer portal").
+Two SPAs cannot both own `/` behind one origin, which is why the learner app is a second hostname rather than a path prefix, `qbank-writer` a third `Host()` router, and the marketing site (`qbank-homepage`, carved out of the admin on 2026-11-07) a fourth at the apex. The hostnames are decided (QFoundry, `qfoundry.in`); the server-side cutover that makes them live is Phase 4 of [docs/roadmaps/qfoundry-brand-and-hostnames.md](docs/roadmaps/qfoundry-brand-and-hostnames.md).
 
 - Backend port: **`PORT=5000`** ([qbank-api/.env](qbank-api/.env)), global prefix **`/api`**.
 - Frontend base URL: **`VITE_BACKEND_URL + "/api"`** — `VITE_BACKEND_URL=http://localhost:5000` in each frontend's `.env.development`. HTTP client is `xior` (fetch-based); all path strings live in that repo's `src/services/configs/apiPaths.js` ([admin](qbank-admin/src/services/configs/apiPaths.js), [client](qbank-learner/src/services/configs/apiPaths.js)).
@@ -742,17 +745,18 @@ Four things about it are worth carrying across the seam:
 
 Production runs on MongoDB Atlas and has no `mongo` container, so `down -v` clears nothing and **nothing in the deploy repo deletes data**. Starting a fresh MVP round means emptying the database in Atlas by hand first.
 
-### Three frontends, three origins
+### Four frontends, four origins
 
-Each SPA is its own compose service, its own image, and its own Traefik router. The API container is routed by neither and publishes no host port — both nginx tiers reach it over the internal network.
+Each frontend is its own compose service, its own image, and its own Traefik router. The API container is routed by none of them and publishes no host port — the three app nginx tiers reach it over the internal network; the homepage never calls it.
 
 | Repo | Service | Image | Host | Deploy |
 |---|---|---|---|---|
-| `qbank-admin` | `web` | `ghcr.io/mroshan74/qbank-admin` | `archiver.trynbuild.com` (`ADMIN_HOST`) | push to `master` → `deploy.sh web <sha>` |
-| `qbank-learner` | `learner` | `ghcr.io/mroshan74/qbank-learner` | `learner.trynbuild.com` (`LEARNER_HOST`) | push to **`main`** → `deploy.sh learner <sha>` |
-| `qbank-writer` | `writer` | `ghcr.io/mroshan74/qbank-writer` | `writer.trynbuild.com`, proposed (`WRITER_HOST`) | push to **`main`** → `deploy.sh writer <sha>` |
+| `qbank-homepage` | `homepage` | `ghcr.io/mroshan74/qbank-homepage` | `qfoundry.in` (`HOMEPAGE_HOST`; `www.` redirects to it) | push to **`main`** → `deploy.sh homepage <sha>` (probed at `/healthz`, it has no `/api`) |
+| `qbank-admin` | `web` | `ghcr.io/mroshan74/qbank-admin` | `studio.qfoundry.in` (`ADMIN_HOST`) | push to `master` → `deploy.sh web <sha>` |
+| `qbank-learner` | `learner` | `ghcr.io/mroshan74/qbank-learner` | `prep.qfoundry.in` (`LEARNER_HOST`) | push to **`main`** → `deploy.sh learner <sha>` |
+| `qbank-writer` | `writer` | `ghcr.io/mroshan74/qbank-writer` | `writer.qfoundry.in` (`WRITER_HOST`) | push to **`main`** → `deploy.sh writer <sha>` |
 
-> **Adding the writer touches every deploy once.** `deploy.sh` pulls the deploy repo and checks the server's `.env` against `.env.example`, which now names `WRITER_HOST`, `WRITER_TAG` and `WRITER_IMAGE`. Until those three keys are in the server's `.env`, **every** service's deploy stops at that check. Add them (and the DNS record) before the deploy repo's writer commit reaches the server: [qbank-deploy/QUICKSTART.md → Adding the writer portal](qbank-deploy/QUICKSTART.md#adding-the-writer-portal-to-a-running-server).
+> **Adding a tier touches every deploy once.** `deploy.sh` pulls the deploy repo and checks the server's `.env` against `.env.example`, which names three keys per tier (`WRITER_HOST`/`TAG`/`IMAGE`, `HOMEPAGE_HOST`/`TAG`/`IMAGE`). Until they are in the server's `.env`, **every** service's deploy stops at that check. Add them (and the DNS records) before the deploy repo's commit reaches the server: [qbank-deploy/QUICKSTART.md → Adding a frontend tier](qbank-deploy/QUICKSTART.md#adding-a-frontend-tier-to-a-running-server). `CLIENT_URL` lists the three app origins only; the homepage makes no API call.
 
 **Two SPAs cannot both own `/` behind one origin** — that is why this is a second hostname rather than a path prefix. A prefix (`/app/`) would have needed a matching Vite `base`, a router `basename`, and a shift in every absolute asset path including `/fonts/…`. The rejected alternative is recorded in [qbank-learner/docs/todos/client-deployment-gaps.md](qbank-learner/docs/todos/client-deployment-gaps.md).
 

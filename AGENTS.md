@@ -1,13 +1,14 @@
 # AGENTS.md — qbank workspace
 
-Pointer file for AI coding agents (Codex, Claude Code, etc.) launched from the **workspace root**. This is a multi-root VS Code workspace ([qbank-workspace.code-workspace](qbank-workspace.code-workspace)) holding five repos that are **one product**: a Kerala PSC exam-question archiver.
+Pointer file for AI coding agents (Codex, Claude Code, etc.) launched from the **workspace root**. This is a multi-root VS Code workspace ([qbank-workspace.code-workspace](qbank-workspace.code-workspace)) holding six repos that are **one product**, QFoundry: a Kerala PSC exam-question archiver and practice platform.
 
 | Project | Role | Start here |
 |---------|------|-----------|
 | **qbank-api** | Backend — NestJS 11 + MongoDB. Owns the data model, auth, RBAC, and the `/api/config` registry. | [qbank-api/AGENTS.md](qbank-api/AGENTS.md) |
-| **qbank-admin** | Staff frontend — Vite + React/JSX. The back office. Ships to `archiver.trynbuild.com`. | [qbank-admin/AGENTS.md](qbank-admin/AGENTS.md) |
-| **qbank-learner** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface. Ships to `learner.trynbuild.com`. Branch is **`main`**, not `master`. | [qbank-learner/AGENTS.md](qbank-learner/AGENTS.md) |
+| **qbank-admin** | Staff frontend — Vite + React/JSX. The back office. Ships to `studio.qfoundry.in`. | [qbank-admin/AGENTS.md](qbank-admin/AGENTS.md) |
+| **qbank-learner** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface. Ships to `prep.qfoundry.in`. Branch is **`main`**, not `master`. | [qbank-learner/AGENTS.md](qbank-learner/AGENTS.md) |
 | **qbank-writer** | Writer frontend — Vite + React/JSX, Mantine, mobile-first. A fork of the old writer portal (`psc-data-builder/pdb-client`, read-only) on the new API: a writer adds questions to their assigned exam papers and sees only their own work. Calls the staff routes with a `writer` token. Being built: [roadmap](qbank-writer/docs/roadmaps/writer-portal.md). Branch is **`main`**. | [qbank-writer/AGENTS.md](qbank-writer/AGENTS.md) |
+| **qbank-homepage** | Marketing site — Vite + React/JSX, shadcn/Tailwind, **static**: the public pages at `qfoundry.in`. Calls no API, holds no session, links out to the three apps. Branch is **`main`**. | [qbank-homepage/AGENTS.md](qbank-homepage/AGENTS.md) |
 | **qbank-deploy** | Infrastructure — Docker Compose, Traefik, deploy/rollback scripts, and the local prod-parity stack. Branch is **`main`**, not `master`. Bringing a server up: [QUICKSTART.md](qbank-deploy/QUICKSTART.md). | [qbank-deploy/README.md](qbank-deploy/README.md) |
 
 ## How to work here
@@ -15,7 +16,7 @@ Pointer file for AI coding agents (Codex, Claude Code, etc.) launched from the *
 - **Inside one repo, that repo's own `AGENTS.md`/`CLAUDE.md` governs.** This root file only adds the layer they can't see: that sibling repos exist and how they connect.
 - **Before any change that spans repos, read [INTEGRATION.md](INTEGRATION.md).** It holds the full contract — topology, the contract-first change protocol, and the four seams that must stay in sync.
 - **pnpm only** in every repo. Never npm or yarn.
-- **One API, three frontends, one origin each.** Each SPA sits behind its own nginx on its own hostname and proxies `/api` to the same never-routed API container (`qbank-writer` gets its host in Phase 8 of its roadmap). A change to one frontend does not automatically apply to the others — but a change to the *API* often touches more than one. The admin and `qbank-writer` share the staff routes (`/api/questions/*`, `/api/exam-papers/*`); the learner app reaches only `/api/papers/*`.
+- **One API, three app frontends and a static homepage, one origin each.** Each SPA sits behind its own nginx on its own hostname (`studio.`, `prep.`, `writer.qfoundry.in`) and proxies `/api` to the same never-routed API container; the homepage at `qfoundry.in` calls no API at all. A change to one frontend does not automatically apply to the others — but a change to the *API* often touches more than one. The admin and `qbank-writer` share the staff routes (`/api/questions/*`, `/api/exam-papers/*`); the learner app reaches only `/api/papers/*`.
 
 ## The rule that bites hardest across the seam
 

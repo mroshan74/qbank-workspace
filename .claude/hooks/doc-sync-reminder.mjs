@@ -46,6 +46,11 @@ process.stdin.on("end", () => {
       "qbank-writer docs — the matching docs/arch/* file for the area, docs/features/* status if feature scope changed, and the boxes in docs/roadmaps/writer-portal.md";
     copyRule =
       " If this change touched any user-visible string, apply docs/arch/12-user-facing-copy.md — no em dashes in copy (a comma, a colon, parentheses, or two sentences instead) — and run `pnpm check:copy`. Every list this app shows must stay keyed on the signed-in writer (assignedTo=me, createdBy=<my id>).";
+  } else if (/qbank-homepage\//i.test(file)) {
+    docs =
+      "qbank-homepage docs — docs/features/marketing-pages.md for any page, section, mockup, header or footer; ARCHITECTURE.md for src/lib/site.js, src/lib/routes.js (plus public/sitemap.xml for a new route) or the theme store";
+    copyRule =
+      " If this change touched any user-visible string, apply docs/arch/12-user-facing-copy.md — no em dashes in copy (a comma, a colon, parentheses, or two sentences instead) — and run `pnpm check:copy`. The brand, the app URLs, the mailboxes and the social handles come from src/lib/site.js, never a literal; a social constant may be empty and every renderer checks that first.";
   } else {
     return;
   }

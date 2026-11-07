@@ -18,6 +18,9 @@
 		},
 		{
 			"path": "qbank-writer"
+		},
+		{
+			"path": "qbank-homepage"
 		}
 	],
 	"settings": {

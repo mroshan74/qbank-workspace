@@ -4,6 +4,7 @@
     "qbank-api": true,
     "qbank-deploy": true,
     "qbank-learner": true,
-    "qbank-writer": true
+    "qbank-writer": true,
+    "qbank-homepage": true
   }
 }

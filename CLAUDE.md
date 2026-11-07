@@ -1,16 +1,17 @@
 # CLAUDE.md — qbank workspace
 
-Guidance for Claude Code launched from the **workspace root**. This multi-root VS Code workspace ([qbank-workspace.code-workspace](qbank-workspace.code-workspace)) holds five repos that make up one product — a Kerala PSC exam-question archiver.
+Guidance for Claude Code launched from the **workspace root**. This multi-root VS Code workspace ([qbank-workspace.code-workspace](qbank-workspace.code-workspace)) holds six repos that make up one product, QFoundry: a Kerala PSC exam-question archiver and practice platform.
 
 | Project | Role | Deep guide |
 |---------|------|-----------|
 | **qbank-api** | Backend — NestJS 11 + MongoDB. Owns the data model, auth, hybrid RBAC, and the public `/api/config` enum + permission registry. | [qbank-api/CLAUDE.md](qbank-api/CLAUDE.md) |
-| **qbank-admin** | Staff frontend — Vite + React/JSX, pnpm/shadcn/Datadog-style UI. The back office. Ships to `archiver.trynbuild.com`. | [qbank-admin/CLAUDE.md](qbank-admin/CLAUDE.md) |
-| **qbank-learner** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface; a learner's token cannot reach the admin routes. Ships to `learner.trynbuild.com`. | [qbank-learner/CLAUDE.md](qbank-learner/CLAUDE.md) |
+| **qbank-admin** | Staff frontend — Vite + React/JSX, pnpm/shadcn/Datadog-style UI. The back office. Ships to `studio.qfoundry.in`. | [qbank-admin/CLAUDE.md](qbank-admin/CLAUDE.md) |
+| **qbank-learner** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface; a learner's token cannot reach the admin routes. Ships to `prep.qfoundry.in`. | [qbank-learner/CLAUDE.md](qbank-learner/CLAUDE.md) |
 | **qbank-writer** | Writer frontend — Vite + React/JSX, Mantine, mobile-first. A fork of the old writer portal (`psc-data-builder/pdb-client`, read-only) on the new API: a writer adds questions to the exam papers assigned to them and sees only their own work. Calls the staff routes with a `writer` token. **Being built**, roadmap [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md). Branch **`main`**. | [qbank-writer/CLAUDE.md](qbank-writer/CLAUDE.md) |
+| **qbank-homepage** | Marketing site — Vite + React/JSX, shadcn/Tailwind, **static**: the landing, pricing, about, contact and legal pages at `qfoundry.in`. Calls no API, holds no session, links out to the three apps. Carved out of `qbank-admin` on 2026-11-07. Branch **`main`**. | [qbank-homepage/CLAUDE.md](qbank-homepage/CLAUDE.md) |
 | **qbank-deploy** | Infrastructure — Docker Compose, Traefik, deploy/rollback scripts, and the local prod-parity stack. Deliberately outside the app repos so the server cannot drift from git. | [qbank-deploy/README.md](qbank-deploy/README.md) |
 
-**One API, three frontends, one origin each.** Each SPA sits behind its own nginx on its own hostname and proxies `/api` to the same never-routed API container — two SPAs cannot both own `/` behind one origin. (`qbank-writer`'s production origin, proposed `writer.trynbuild.com`, is prepared in the repos; the server steps are in [qbank-deploy/QUICKSTART.md](qbank-deploy/QUICKSTART.md#adding-the-writer-portal-to-a-running-server).) A consequence worth remembering: the API's `CLIENT_URL` **replaces** its built-in CORS fallback rather than extending it, so it must name *every* origin.
+**One API, three app frontends and a static homepage, one origin each.** Each SPA sits behind its own nginx on its own hostname and proxies `/api` to the same never-routed API container — two SPAs cannot both own `/` behind one origin. The hosts are `qfoundry.in` (homepage, with `www.` redirecting to it), `studio.qfoundry.in` (admin), `prep.qfoundry.in` (learner) and `writer.qfoundry.in` (writer); the server-side cutover is Phase 4 of [docs/roadmaps/qfoundry-brand-and-hostnames.md](docs/roadmaps/qfoundry-brand-and-hostnames.md). A consequence worth remembering: the API's `CLIENT_URL` **replaces** its built-in CORS fallback rather than extending it, so it must name *every* app origin (the homepage calls no API and is left out).
 
 ## Scope of this file
 
@@ -20,12 +21,12 @@ Guidance for Claude Code launched from the **workspace root**. This multi-root V
 
 ## Cloning / syncing every repo in one go
 
-This workspace root is its own lightweight git repo (`github.com/mroshan74/qbank-workspace`) that tracks only meta files — docs, workspace/editor config, and the sync tooling below. It never tracks the contents of `qbank-api/`, `qbank-admin/`, `qbank-learner/`, `qbank-deploy/`, or `qbank-writer/` (see `.gitignore`); each of those stays a fully independent repo with its own remote, branch, and history.
+This workspace root is its own lightweight git repo (`github.com/mroshan74/qbank-workspace`) that tracks only meta files — docs, workspace/editor config, and the sync tooling below. It never tracks the contents of `qbank-api/`, `qbank-admin/`, `qbank-learner/`, `qbank-deploy/`, `qbank-writer/` or `qbank-homepage/` (see `.gitignore`); each of those stays a fully independent repo with its own remote, branch, and history.
 
-- [repos.json](repos.json) — manifest of the five repos (name, clone URL, branch). **Branches differ:** `master` for the api and admin, **`main`** for the client, the deploy repo and `qbank-writer`. `repos.json` is the authority; check there rather than assuming.
+- [repos.json](repos.json) — manifest of the six repos (name, clone URL, branch). **Branches differ:** `master` for the api and admin, **`main`** for the client, the deploy repo, `qbank-writer` and `qbank-homepage`. `repos.json` is the authority; check there rather than assuming.
 - [sync.sh](sync.sh) — run `bash sync.sh` to clone whichever repos are missing and `git pull --ff-only` whichever already exist, in one command. Plain bash (no jq/node dependency) so it runs unmodified on Windows (Git Bash), macOS, and Linux. It never merges or overwrites local work — a repo with diverging or uncommitted changes is left alone and flagged in the summary.
 
-On a fresh machine: clone this root repo, then run `bash sync.sh` from it to pull down all five repos. The deploy repo's compose build contexts are `../<repo>`, so they must all sit side by side.
+On a fresh machine: clone this root repo, then run `bash sync.sh` from it to pull down all six repos. The deploy repo's compose build contexts are `../<repo>`, so they must all sit side by side.
 
 ## Run the full stack
 
@@ -46,6 +47,10 @@ cd qbank-learner && pnpm install && pnpm run dev
 # writer frontend — Vite dev on :5180, strictPort (from Phase 1 of its roadmap).
 # Unlike the other two it is NOT cross-origin: Vite proxies /api to :5000.
 cd qbank-writer && pnpm install && pnpm run dev
+
+# homepage — Vite dev on :5190, strictPort. Static: it never calls the API, so
+# it needs neither the backend running nor a CLIENT_URL entry.
+cd qbank-homepage && pnpm install && pnpm run dev
 ```
 
 The admin and learner dev origins must be named in the API's `CLIENT_URL`, or leave it unset and take the fallback (`http://localhost:5173,http://localhost:3000`) — setting it **replaces** that list. `qbank-writer` needs no entry: its dev server proxies `/api`, so the browser never makes a cross-origin call.
@@ -59,6 +64,7 @@ docker compose -f compose.local.yml --profile seed run --rm seed   # safe to re-
 # → http://localhost:8080  (admin)
 # → http://localhost:8081  (learner)
 # → http://localhost:8082  (writer)
+# → http://localhost:8083  (homepage)
 ```
 
 That seed step runs `qbank-deploy/scripts/bootstrap.mjs` inside the api image and covers the System organization, the superadmin, the taxonomy and all 163 papers. It is idempotent. **The server uses the identical profile against `compose.prod.yml`**, so this rehearses the real bootstrap rather than a local approximation — the server runbook, commands only, is [qbank-deploy/QUICKSTART.md](qbank-deploy/QUICKSTART.md).
@@ -110,4 +116,4 @@ Every code change updates the owning repo's docs **in the same change** — docs
 
 **Deployment changes are documentation changes too.** `qbank-deploy/README.md` is the authoritative reference for anything operational — hostnames, compose services, `deploy.sh` arguments, `.env` keys. A frontend repo's `Dockerfile` / `nginx.conf` / `.github/workflows/` documents itself locally (the client's is under `ARCHITECTURE.md → Deployment`) and links there rather than restating it.
 
-A `PostToolUse` hook (`.claude/hooks/doc-sync-reminder.mjs`, five identical copies — the root, api, admin, client and `qbank-writer` — each wired in that repo's `.claude/settings.json`) re-injects this rule automatically whenever a source file under a repo's `src/` is written or edited.
+A `PostToolUse` hook (`.claude/hooks/doc-sync-reminder.mjs`, six identical copies — the root, api, admin, client, `qbank-writer` and `qbank-homepage` — each wired in that repo's `.claude/settings.json`) re-injects this rule automatically whenever a source file under a repo's `src/` is written or edited.

@@ -24,6 +24,11 @@
       "name": "qbank-writer",
       "url": "https://github.com/mroshan74/qbank-writer.git",
       "branch": "main"
+    },
+    {
+      "name": "qbank-homepage",
+      "url": "https://github.com/mroshan74/qbank-homepage.git",
+      "branch": "main"
     }
   ]
 }
