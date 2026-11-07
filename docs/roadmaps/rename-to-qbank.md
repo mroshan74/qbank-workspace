@@ -1,12 +1,12 @@
 # Roadmap: rename the repos from `psc-archiver-*` to `qbank-*`
 
-**Status:** Phases 1 and 2 done (2026-11-07). Phase 3, the server cutover, is next and needs SSH access to the VPS. The five GitHub repos and the local folders are already `qbank-*`; the local prod-parity stack runs as `qbank-local` against a database named `qbank`. Revised 2026-11-07 after the fifth repo, `qbank-writer`, was scaffolded on the new codename (its own plan: [qbank-writer/docs/roadmaps/writer-portal.md](../../qbank-writer/docs/roadmaps/writer-portal.md)).
+**Status:** Phases 1 and 2 done, Phase 3 prepared in the repos (2026-11-07). What remains is the server cutover itself, which needs SSH to the VPS, and the pushes, in the order Phase 3 gives. The five GitHub repos and the local folders are already `qbank-*`; the local prod-parity stack runs as `qbank-local` against a database named `qbank`. Revised 2026-11-07 after the fifth repo, `qbank-writer`, was scaffolded on the new codename (its own plan: [qbank-writer/docs/roadmaps/writer-portal.md](../../qbank-writer/docs/roadmaps/writer-portal.md)).
 
 | Phase | State |
 |---|---|
 | 1. Decouple the brand from the code | done: admin `7023430`, api `339c181`, learner `6bde8ba` |
 | 2. Rename the codename locally and on GitHub | done: api `deb1230`, admin `b5478c7`, learner `e2d650e`, deploy `003166f`, root (the commit that carries this line). Local stack verified: four containers healthy, 163 papers seeded, both apps answer readiness, the learner font serves. Nothing pushed yet |
-| 3. Server cutover | not started |
+| 3. Server cutover | repo side done and committed (deploy, api, admin, learner), not pushed; server side pending, runbook in `qbank-deploy/QUICKSTART.md` |
 | 4. Apply the brand (when it is chosen) | not started |
 
 **Owner repos:** this workspace root (it owns `repos.json`, which defines the folder names), plus `psc-archiver-api`, `psc-archiver-admin`, `psc-archiver-client` and `psc-archiver-deploy`. `qbank-writer` is already named for the codename and keeps its brand in one constant from birth, so it is never renamed; it appears below only where its docs name the four siblings and where its deployment meets the server cutover. Phase 1 lives in the three older app repos; Phase 2 touches all six checkouts; Phase 3 is the deploy repo and the server.
@@ -97,12 +97,21 @@ Goal: one constant per app owns the product name, and no `src/` file spells it o
 
 Order matters: `deploy.sh` pulls whatever image name the server `.env` names, and nothing on the server changes until this phase.
 
-- [ ] Push the deploy repo with: `compose.prod.yml` `name: qbank`, `container_name: qbank-api` / `qbank-web` / `qbank-learner` (and `qbank-writer` if the `writer` service exists by then), volume `name: qbank-ai-tagging-jobs`; `PROJECT_NAME="qbank"` in `scripts/deploy.sh` and `scripts/deploy-latest.sh`; `/opt/qbank` in `scripts/setup-app.sh`, `README.md` and `QUICKSTART.md`.
-- [ ] On the server, with no AI-tagging job in flight: `docker compose -f compose.prod.yml -p psc-archiver down`, `sudo mv /opt/psc-archiver /opt/qbank`, `git pull` there, then in `.env` set `API_IMAGE`, `WEB_IMAGE`, `LEARNER_IMAGE` to the `qbank-*` names (`WRITER_IMAGE`, if present, already is) and the database in `MONGODB_URI` to `qbank`.
-- [ ] Push each app repo that deploys (three, or four with `qbank-writer`) with the workflow's `script:` line changed to `/opt/qbank/scripts/deploy.sh ...`; CI builds the first `qbank-*` images. The first boot is `docker compose -f compose.prod.yml -p qbank up -d` (the first-deploy note in `setup-app.sh` explains why `deploy.sh` cannot be first), then the seed profile against the empty `qbank` database; after that CI deploys work normally.
-- [ ] Set the new GHCR packages private, matching the old ones, so the server's stored login keeps working.
-- [ ] Verify `/api/readyz` through every host and a staff login against the reseeded database.
-- [ ] Clean up: `docker volume rm psc-archiver-ai-tagging-jobs`, drop the `pscarchiver` database in Atlas, and after a week delete the old GHCR packages.
+**Repo side, done 2026-11-07 (committed, not pushed):**
+
+- [x] Deploy repo: `compose.prod.yml` `name: qbank`, `container_name: qbank-api` / `qbank-admin` / `qbank-learner` (the web container is named after its image, `qbank-admin`, not `qbank-web`), volume `name: qbank-ai-tagging-jobs`; `PROJECT_NAME="qbank"` in `scripts/deploy.sh` and `scripts/deploy-latest.sh`; `/opt/qbank` in `scripts/setup-app.sh`, `README.md`, `QUICKSTART.md`, `INSTRUCTION.md` and `.env.example`. `docker compose -f compose.prod.yml -p qbank config` parses with the new names.
+- [x] The three app workflows' `script:` line calls `/opt/qbank/scripts/deploy.sh`. The api's `doc/08-deployment.md` and the admin's deployment roadmap say `/opt/qbank` too.
+- [x] The one-time runbook is in `qbank-deploy/QUICKSTART.md` ("One-time: moving the server from `psc-archiver` to `qbank`"); delete that section after the cutover.
+
+**Server side, not done (needs SSH to the VPS). Order matters, because the server's `.env` names the images `deploy.sh` pulls:**
+
+- [ ] Push `qbank-deploy`, then `qbank-api`, `qbank-admin` and `qbank-learner`. CI builds `ghcr.io/mroshan74/qbank-*:<sha>` and `:latest`; the deploy step fails because `/opt/qbank` does not exist yet, which is expected. **Do not push the app repos before the deploy repo**, and expect nothing to deploy until the next step.
+- [ ] On the server, with no AI-tagging job in flight: `docker compose -f compose.prod.yml -p psc-archiver down` in `/opt/psc-archiver`; `sudo mv /opt/psc-archiver /opt/qbank`; `git remote set-url origin https://github.com/mroshan74/qbank-deploy.git` and `git pull --ff-only` there; in `.env` set `API_IMAGE`, `WEB_IMAGE`, `LEARNER_IMAGE` to the `qbank-*` names and the database in `MONGODB_URI` to `qbank`.
+- [ ] `./scripts/deploy-latest.sh --seed`: pulls `:latest` of all three images under the `qbank` project, starts the stack, and seeds the empty `qbank` database (System organization, superadmin from `SEED_SUPERADMIN_*`, taxonomy, 163 papers).
+- [ ] Pin the tags: run each app's workflow by hand with the `<sha>` from the first step, or `./scripts/deploy.sh <api|web|learner> <sha>` on the server. From then on every push deploys normally.
+- [ ] Set the new GHCR packages private, matching the old ones, so the server's stored login keeps working (they are created private when the repo is private; check once).
+- [ ] Verify `/api/readyz` through both hosts and a staff login against the reseeded database.
+- [ ] Clean up: `docker volume rm psc-archiver-ai-tagging-jobs`, drop the `pscarchiver` database in Atlas, delete the runbook section from `QUICKSTART.md`, and after a week delete the old GHCR packages.
 
 **Exit criteria:** every host serves a `ghcr.io/mroshan74/qbank-*` image, and a CI deploy of each deployed service runs green.
 
