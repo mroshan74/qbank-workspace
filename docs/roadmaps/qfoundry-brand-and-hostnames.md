@@ -1,11 +1,11 @@
 # Roadmap: QFoundry, the brand and the hostnames
 
-**Status (2026-11-07):** Phase 0 done, every decision below confirmed by the owner; Phases 1 to 5 not started. Nothing is pushed from any repo until Phase 4, by design (decision 2).
+**Status (2026-11-07):** Phases 0 and 1 done (every screen says QFoundry, with Studio / Writer / Prep beside it; the old emails, the Awiztec wording and the third-party watermark are gone from code); Phases 2 to 5 not started. Nothing is pushed from any repo until Phase 4, by design (decision 2).
 
 | Phase | Scope | State |
 |---|---|---|
 | 0 | This roadmap and the cross-links in the root docs and the two sibling roadmaps | done |
-| 1 | Brand constants and hardcoded leftovers in the four app repos and the API | not started |
+| 1 | Brand constants and hardcoded leftovers in the four app repos and the API | done |
 | 2 | Scaffold `qbank-homepage`, move the marketing and legal pages out of `qbank-admin` | not started |
 | 3 | Deploy repo: `homepage` service, new keys, scripts, local stack :8083, workspace meta, hook copies, hostname doc sweep | not started |
 | 4 | Server cutover: DNS, `/opt/qbank/.env`, certificates, the order of pushes, verification, cleanup | not started |
@@ -64,31 +64,31 @@ What the investigation (2026-11-07) found:
 Goal: every screen says QFoundry; no old brand, old email or third-party brand literal remains in `src/`, `index.html` or `public/`. Hostnames untouched here.
 
 **qbank-admin**
-- [ ] `src/lib/site.js`: `APP_NAME = "QFoundry"`, add `APP_ROLE = "Studio"`, `HOMEPAGE_URL`, `HOMEPAGE_TERMS_URL`, `HOMEPAGE_PRIVACY_URL`, `SUPPORT_EMAIL`, `PRIVACY_EMAIL`; `FAVICON = "/favicon.ico"`.
-- [ ] `vite.config.js` `siteHtml` also fills `%APP_ROLE%`, `%APP_TAGLINE%`, `%APP_DESCRIPTION%`; `index.html` lines 13, 21, 25, 35, 39 read placeholders; title `%APP_NAME% %APP_ROLE%`.
-- [ ] `src/pages/login/Login.jsx:23` reads `APP_NAME`; `BrandLogo.jsx` sub-line reads `APP_ROLE`.
-- [ ] Emails: `Contact.jsx` (both the support and the business-inquiries entries), `components/PublicFooter.jsx`, `Cancellation.jsx`, `IndividualRules.jsx`, `OrganizationRules.jsx:237-238` read `SUPPORT_EMAIL`; `Privacy.jsx` reads `PRIVACY_EMAIL`. `Terms.jsx:213` "owned by Awiztec Technologies" becomes "owned by {APP_NAME}" (decision 4). (These files move in Phase 2; fixing here keeps the interim admin consistent and the move carries it.)
-- [ ] `question-paper-editor/data/defaultPaper.js:55-56` watermark; `public/site.webmanifest` names; `public/50x.html:104` by hand (comment kept); `Dockerfile:51` label.
-- [ ] Docs: `docs/arch/12-user-facing-copy.md` (the `APP_ROLE` rule), `ARCHITECTURE.md`.
+- [x] `src/lib/site.js`: `APP_NAME = "QFoundry"`, `APP_ROLE = "Studio"`, `HOMEPAGE_URL`, `HOMEPAGE_TERMS_URL`, `HOMEPAGE_PRIVACY_URL`, `SUPPORT_EMAIL`, `PRIVACY_EMAIL`; `FAVICON = "/favicon.ico"` and `APPLE_TOUCH_ICON = "/apple-touch-icon.png"` (both now name files that exist).
+- [x] `vite.config.js` `siteHtml` fills `%APP_ROLE%`, `%APP_TAGLINE%`, `%APP_DESCRIPTION%` too; `index.html` reads the placeholders instead of five repeated literals; title `QFoundry Studio`.
+- [x] `Login.jsx` reads `APP_NAME`; the "Admin Control" sub-line in `BrandLogo.jsx`, `sidebar/LogoItem.jsx` and the landing `MockSidebar.jsx` renders `APP_ROLE`.
+- [x] Emails: `Contact.jsx` (support and business inquiries), `PublicFooter.jsx`, `Cancellation.jsx`, `IndividualRules.jsx`, `OrganizationRules.jsx` read `SUPPORT_EMAIL`; `Privacy.jsx` reads `PRIVACY_EMAIL`; `Terms.jsx` says "owned by {APP_NAME}" (decision 4).
+- [x] `defaultPaper.js` watermark `QFOUNDRY` / `qfoundry.in`; `site.webmanifest` "QFoundry Studio" / "QFoundry"; `50x.html` by hand; `Dockerfile` label. Four stale "PSC Archiver" code comments fixed while there.
+- [x] Docs: `docs/arch/12-user-facing-copy.md` (the `APP_ROLE` rule, the mailboxes, the placeholders). `ARCHITECTURE.md` does not mention the constant, so nothing to change there.
 
 **qbank-learner**
-- [ ] `src/lib/site.js`: `APP_NAME`, `APP_ROLE = "Prep"`, `SUPPORT_EMAIL`; `index.html` title and description via the plugin.
-- [ ] `src/pdf/data/defaultPaper.js:55-56` watermark; `Dockerfile:54` label. Favicon is a Phase 5 asset: note in `docs/todos/client-deployment-gaps.md`.
-- [ ] Docs: `docs/arch/12-user-facing-copy.md`, `docs/arch/11-shared-atoms-manifest.md`, `docs/features/legal-pages.md:76`.
+- [x] `src/lib/site.js`: `APP_NAME`, `APP_ROLE = "Prep"`, `SUPPORT_EMAIL = "support@qfoundry.in"`; `index.html` title and description via the plugin; `useDocumentTitle` renders `Home · QFoundry Prep`.
+- [x] `src/pdf/data/defaultPaper.js` watermark; `Dockerfile` label; the Vite-logo favicon noted in `docs/todos/client-deployment-gaps.md` as a Phase 5 asset.
+- [x] Docs: `docs/arch/12-user-facing-copy.md` (rule and the example row), `docs/arch/11-shared-atoms-manifest.md`, `docs/features/legal-pages.md`.
 
 **qbank-writer**
-- [ ] `src/lib/site.js`: `APP_NAME = "QFoundry"`, `APP_ROLE = "Writer"`; plugin fills `%APP_ROLE%`; screens that showed `APP_NAME` as a full title show both (`Login.jsx:50,95`, `AppLogo.jsx`); `public/site.webmanifest` names.
-- [ ] Docs: `docs/arch/12-user-facing-copy.md` gains the brand rule (today it has none; the rule sits in `ARCHITECTURE.md:36`), roadmap decision 10 note.
+- [x] `src/lib/site.js`: `APP_NAME = "QFoundry"`, `APP_ROLE = "Writer"`; the plugin fills `%APP_ROLE%`; the login wordmark shows `QFoundry Writer`, the welcome line `QFoundry`; `site.webmanifest` names. `AppLogo.jsx` carries no text, so it needed nothing.
+- [x] Docs: `docs/arch/12-user-facing-copy.md` gained the brand section; `ARCHITECTURE.md` Brand section; roadmap decision 10 records the fix.
 
 **qbank-api**
-- [ ] `src/common/app-name.ts`: `APP_NAME = 'QFoundry'`, add `APP_URL = 'https://qfoundry.in'`.
-- [ ] `src/main.ts:75` Swagger description built from `APP_NAME`; `licence-notice.ts:48` becomes `Prepared with ${APP_NAME} (${APP_URL}).` (rendered per export, never stored; no em dash, it prints on a PDF).
-- [ ] `src/app-settings/dto/paper-defaults.dto.ts:153-154` watermark; `Dockerfile:41` label.
-- [ ] Docs: `ARCHITECTURE.md` constants note; `doc/02-modules.md` if it quotes the line.
+- [x] `src/common/app-name.ts`: `APP_NAME = 'QFoundry'`, `APP_URL = 'https://qfoundry.in'`.
+- [x] `src/main.ts` Swagger description built from `APP_NAME`; `licence-notice.ts` prints `Prepared with QFoundry (https://qfoundry.in).` (rendered per export, never stored).
+- [x] `paper-defaults.dto.ts` watermark; `Dockerfile` label.
+- [x] Docs: `ARCHITECTURE.md` constants note. `doc/02-modules.md` does not quote the line.
 
-**Gates:** `pnpm check:copy`, `pnpm lint`, `pnpm build` green in admin, learner, writer; `pnpm build` and `pnpm lint:ci` green in api; each built `index.html` carries "QFoundry" and no `%` placeholder.
+**Gates (met 2026-11-07):** `pnpm lint` (0 errors), `pnpm check:copy` and `pnpm build` green in admin, learner, writer; `pnpm build` and `pnpm lint:ci` green in api; the built titles read `QFoundry Studio`, `QFoundry Prep`, `QFoundry Writer` with no `%` placeholder left.
 
-**Exit:** from the root, `grep -rniE "PSC Archiver|QBank Writer|archiver\.in|trynbuild|awiztec|makeiteasy|pscarchiver" qbank-*/src qbank-*/index.html qbank-*/public` returns only the admin's social constants (deleted in Phase 2) and code comments.
+**Exit (met 2026-11-07):** from the root, `grep -rniE "PSC Archiver|QBank Writer|archiver\.in|trynbuild|awiztec|makeiteasy|pscarchiver" qbank-*/src qbank-*/index.html qbank-*/public` returns only the admin's social constants (deleted in Phase 2) and the admin's `public/docs/sample_paper.pdf` (a Phase 5 asset).
 
 ## Phase 2: scaffold `qbank-homepage`, move the public pages out of `qbank-admin`
 
