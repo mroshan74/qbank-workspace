@@ -22,7 +22,7 @@ Guidance for Claude Code launched from the **workspace root**. This multi-root V
 
 This workspace root is its own lightweight git repo (`github.com/mroshan74/qbank-workspace`) that tracks only meta files — docs, workspace/editor config, and the sync tooling below. It never tracks the contents of `qbank-api/`, `qbank-admin/`, `qbank-learner/`, `qbank-deploy/`, or `qbank-writer/` (see `.gitignore`); each of those stays a fully independent repo with its own remote, branch, and history.
 
-- [repos.json](repos.json) — manifest of the five repos (name, clone URL, branch). **Branches differ:** `master` for the api and admin, **`main`** for the client, the deploy repo and `qbank-writer`. `repos.json` is the authority; check there rather than assuming. *(The `qbank-writer` remote is created during Phase 0 of its roadmap; until it exists, `sync.sh` flags that one repo and syncs the other four.)*
+- [repos.json](repos.json) — manifest of the five repos (name, clone URL, branch). **Branches differ:** `master` for the api and admin, **`main`** for the client, the deploy repo and `qbank-writer`. `repos.json` is the authority; check there rather than assuming.
 - [sync.sh](sync.sh) — run `bash sync.sh` to clone whichever repos are missing and `git pull --ff-only` whichever already exist, in one command. Plain bash (no jq/node dependency) so it runs unmodified on Windows (Git Bash), macOS, and Linux. It never merges or overwrites local work — a repo with diverging or uncommitted changes is left alone and flagged in the summary.
 
 On a fresh machine: clone this root repo, then run `bash sync.sh` from it to pull down all five repos. The deploy repo's compose build contexts are `../<repo>`, so they must all sit side by side.
@@ -58,6 +58,7 @@ docker compose -f compose.local.yml up -d --build
 docker compose -f compose.local.yml --profile seed run --rm seed   # safe to re-run
 # → http://localhost:8080  (admin)
 # → http://localhost:8081  (learner)
+# → http://localhost:8082  (writer)
 ```
 
 That seed step runs `qbank-deploy/scripts/bootstrap.mjs` inside the api image and covers the System organization, the superadmin, the taxonomy and all 163 papers. It is idempotent. **The server uses the identical profile against `compose.prod.yml`**, so this rehearses the real bootstrap rather than a local approximation — the server runbook, commands only, is [qbank-deploy/QUICKSTART.md](qbank-deploy/QUICKSTART.md).

@@ -805,6 +805,7 @@ docker compose -f compose.local.yml up -d --build
 docker compose -f compose.local.yml --profile seed run --rm seed   # safe to re-run
 # → http://localhost:8080  (admin)
 # → http://localhost:8081  (learner)
+# → http://localhost:8082  (writer)
 ```
 
 The seed step runs `scripts/bootstrap.mjs` inside the api image and covers the System organization, the superadmin, the taxonomy and the whole paper corpus. It is idempotent, so re-running it is how you pick up a correction to the seed data, not a first-run-only step. The **server uses the identical profile** against `compose.prod.yml`, so this rehearses the real thing rather than a local approximation.
