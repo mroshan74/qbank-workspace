@@ -1,4 +1,5 @@
-psc-archiver-api/
-psc-archiver-admin/
-psc-archiver-deploy/
-psc-archiver-client/
+qbank-api/
+qbank-admin/
+qbank-deploy/
+qbank-learner/
+qbank-writer/

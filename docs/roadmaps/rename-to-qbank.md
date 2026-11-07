@@ -1,11 +1,11 @@
 # Roadmap: rename the repos from `psc-archiver-*` to `qbank-*`
 
-**Status:** Phase 1 done (2026-11-07, one commit per app repo). Phase 2 is next. Revised 2026-11-07 after the fifth repo, `qbank-writer`, was scaffolded on the new codename (its own plan: [qbank-writer/docs/roadmaps/writer-portal.md](../../qbank-writer/docs/roadmaps/writer-portal.md)).
+**Status:** Phases 1 and 2 done (2026-11-07). Phase 3, the server cutover, is next and needs SSH access to the VPS. The five GitHub repos and the local folders are already `qbank-*`; the local prod-parity stack runs as `qbank-local` against a database named `qbank`. Revised 2026-11-07 after the fifth repo, `qbank-writer`, was scaffolded on the new codename (its own plan: [qbank-writer/docs/roadmaps/writer-portal.md](../../qbank-writer/docs/roadmaps/writer-portal.md)).
 
 | Phase | State |
 |---|---|
-| 1. Decouple the brand from the code | done: admin `7023430`, api `339c181`, client `6bde8ba` |
-| 2. Rename the codename locally and on GitHub | not started |
+| 1. Decouple the brand from the code | done: admin `7023430`, api `339c181`, learner `6bde8ba` |
+| 2. Rename the codename locally and on GitHub | done: api `deb1230`, admin `b5478c7`, learner `e2d650e`, deploy `003166f`, root (the commit that carries this line). Local stack verified: four containers healthy, 163 papers seeded, both apps answer readiness, the learner font serves. Nothing pushed yet |
 | 3. Server cutover | not started |
 | 4. Apply the brand (when it is chosen) | not started |
 
@@ -80,16 +80,16 @@ Goal: one constant per app owns the product name, and no `src/` file spells it o
 
 > **Two steps need a person.** Windows refuses to rename a folder VS Code holds open, so close the workspace (and any dev server) before the folder renames. And the GitHub renames are done in each repo's Settings page (or `gh repo rename`), which this environment cannot reach without the GitHub CLI. Everything else in this phase is scripted and runs after those two.
 
-- [ ] Rename the five GitHub repos: `psc-archiver-api` to `qbank-api`, `psc-archiver-admin` to `qbank-admin`, `psc-archiver-client` to `qbank-learner`, `psc-archiver-deploy` to `qbank-deploy`, `psc-archiver-workspace` to `qbank-workspace`. Secrets, Actions history and old-URL redirects carry over.
-- [ ] Rename the four local folders to match (`qbank-writer` already is); `git remote set-url origin` to the new URL in each (and in this root repo), so nothing relies on the redirect.
-- [ ] Admin `mappingTemplates.js`: localStorage keys become `qbank:bulk-import-templates:v1` and `qbank:bulk-import-last-used:v1`.
-- [ ] Root repo: `repos.json` (the four names and URLs; the `qbank-writer` entry stays), the workspace file (rename it to `qbank-workspace.code-workspace` and fix the four folder paths), `.gitignore`, `.vscode/settings.json`, `.claude/hooks/doc-sync-reminder.mjs` (three patterns; the writer branch stays), `CLAUDE.md`, `INTEGRATION.md`, `AGENTS.md`.
-- [ ] Each of the three older app repos: `package.json` `name`; `Dockerfile` OCI labels; `.claude/hooks/doc-sync-reminder.mjs`; the absolute paths in `CLAUDE.md`; `.github/workflows/deploy.yml` `IMAGE_NAME` (`qbank-api`, `qbank-admin`, `qbank-learner`) and the summary heading. **Not** the `script:` path with `/opt/psc-archiver`; that is Phase 3.
-- [ ] `qbank-writer`: only its `.claude/hooks/doc-sync-reminder.mjs` copy (kept byte-identical to the other four), the sibling paths in `CLAUDE.md`, the workspace-file link in `CLAUDE.md` and `README.md`, and its markdown in the sweep below. No code, no package name, no image name.
-- [ ] Deploy repo: `compose.local.yml` (`name:`, build contexts, image defaults, the database name in `MONGODB_URI`); `compose.prod.yml` (image defaults only); `.env.example` (`*_IMAGE` and the database name); `scripts/setup-app.sh` `REPO_URL`; the `curl` URL in `README.md`; the hint in `scripts/bootstrap.mjs`; comments. Also the database name in `psc-archiver-api/.env.example`.
-- [ ] Doc sweep across all six checkouts (root and five repos): one replace over `**/*.md` for `psc-archiver-(api|admin|deploy|workspace)` to `qbank-$1`, `psc-archiver-client` to `qbank-learner`, `psc-archiver-web` to `qbank-admin`; then read the README, CLAUDE and INTEGRATION headers by hand. Delete the stale `__pycache__/*.pyc` hits under `.claude/skills` and `.opencode/skills`.
-- [ ] Verify: `bash sync.sh` from the root clones or pulls all five repos; `docker compose -f compose.local.yml up -d --build` and the seed profile in the deploy repo (with the `writer` service too, if the writer roadmap's Phase 6 has run); `pnpm build` in each app; edit a `src/` file in each of the four app repos and confirm the doc-sync hook still fires; `diff` the five hook copies.
-- [ ] Optional, last: rename the root folder and move `~/.claude/projects/c--00-FILES-PROJECTS-2026-psc-archiver*` to the new slug so memory and plans follow.
+- [x] Renamed the five GitHub repos with `gh repo rename` (api, admin, client → `qbank-learner`, deploy, workspace → `qbank-workspace`). Secrets, Actions history and old-URL redirects carried over.
+- [x] Renamed the four local folders (by hand, with VS Code closed; Windows refuses while the folders are open); `git remote set-url origin` to the new URL in each and in this root repo; every remote answers `ls-remote`. **`pnpm install` had to be re-run in each app**: pnpm's `node_modules` junctions on Windows carry the absolute old path, so every build failed until then.
+- [x] Admin localStorage keys: nothing left to rename; the bulk-import modal that owned them was retired before this phase ran.
+- [x] Root repo: `repos.json`, the workspace file (now `qbank-workspace.code-workspace`, five folders), `.gitignore`, `.vscode/settings.json`, `.claude/hooks/doc-sync-reminder.mjs`, `CLAUDE.md`, `INTEGRATION.md`, `AGENTS.md`.
+- [x] Each of the three older app repos: `package.json` `name`; `Dockerfile` OCI labels; `.claude/hooks/doc-sync-reminder.mjs`; the absolute paths in `CLAUDE.md` (the root folder on this machine is now `qfoundry`, and the paths say so); `.github/workflows/deploy.yml` `IMAGE_NAME` (`qbank-api`, `qbank-admin`, `qbank-learner`) and the summary heading. The `script:` path with `/opt/psc-archiver` is untouched for Phase 3.
+- [x] `qbank-writer`: its hook copy, the sibling paths and workspace-file link in `CLAUDE.md`, `README.md` and `AGENTS.md`, and its roadmap. No code, no package name, no image name.
+- [x] Deploy repo: `compose.local.yml` (`name: qbank-local`, build contexts, image defaults, database `qbank`); `compose.prod.yml` (image defaults only; project, container and volume names untouched); `.env.example` (`*_IMAGE`, database name); `scripts/setup-app.sh` `REPO_URL`; the `curl` URL in `README.md`; the hint in `scripts/bootstrap.mjs`; the CI key comment (`qbank-ci`). Also the database name in `qbank-api/.env.example`.
+- [x] Doc sweep across the root and five repos with one script (`psc-archiver-(api|admin|deploy|workspace)` to `qbank-$1`, `-client` to `qbank-learner`, `-web` to `qbank-admin`, the database name, the absolute root path); titles that said "psc-archiver workspace" now say "qbank workspace"; this roadmap was skipped so it still reads as the record of the rename. The stale `.pyc` caches were left alone: they are untracked build artefacts, not sources.
+- [x] Verify: `pnpm build` green in all three apps; `docker compose -f compose.local.yml config` resolves the new contexts and the `qbank-local` project; the hook answers for a path under each of the four app folders and stays silent for the deploy repo; the five hook copies are byte-identical. The prod-parity stack build, seed and probes: see the status header. `bash sync.sh` was not run: it would `pull --ff-only` five repos with uncommitted work and flag each one, which proves nothing until the Phase 2 commits are pushed.
+- [x] Root folder: renamed by hand to `qfoundry` (the user's choice, outside this plan); the Claude Code project directory moved with it.
 
 **Exit criteria:** `grep -rli "psc-archiver" --exclude-dir=node_modules .` from the root returns only `/opt/psc-archiver`, the compose project name, the container names and the volume name (all Phase 3). The local prod-parity stack is green against a database named `qbank`.
 

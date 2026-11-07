@@ -1,23 +1,28 @@
 {
   "repos": [
     {
-      "name": "psc-archiver-api",
-      "url": "https://github.com/mroshan74/psc-archiver-api.git",
+      "name": "qbank-api",
+      "url": "https://github.com/mroshan74/qbank-api.git",
       "branch": "master"
     },
     {
-      "name": "psc-archiver-admin",
-      "url": "https://github.com/mroshan74/psc-archiver-admin.git",
+      "name": "qbank-admin",
+      "url": "https://github.com/mroshan74/qbank-admin.git",
       "branch": "master"
     },
     {
-      "name": "psc-archiver-deploy",
-      "url": "https://github.com/mroshan74/psc-archiver-deploy.git",
+      "name": "qbank-deploy",
+      "url": "https://github.com/mroshan74/qbank-deploy.git",
       "branch": "main"
     },
     {
-      "name": "psc-archiver-client",
-      "url": "https://github.com/mroshan74/psc-archiver-client.git",
+      "name": "qbank-learner",
+      "url": "https://github.com/mroshan74/qbank-learner.git",
+      "branch": "main"
+    },
+    {
+      "name": "qbank-writer",
+      "url": "https://github.com/mroshan74/qbank-writer.git",
       "branch": "main"
     }
   ]

@@ -1,8 +1,9 @@
 {
   "files.exclude": {
-    "psc-archiver-admin": true,
-    "psc-archiver-api": true,
-    "psc-archiver-deploy": true,
-    "psc-archiver-client": true
+    "qbank-admin": true,
+    "qbank-api": true,
+    "qbank-deploy": true,
+    "qbank-learner": true,
+    "qbank-writer": true
   }
 }

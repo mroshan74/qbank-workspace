@@ -5,16 +5,19 @@
 			"name": "workspace-root"
 		},
 		{
-			"path": "psc-archiver-deploy"
+			"path": "qbank-deploy"
 		},
 		{
-			"path": "psc-archiver-api"
+			"path": "qbank-api"
 		},
 		{
-			"path": "psc-archiver-admin"
+			"path": "qbank-admin"
 		},
 		{
-			"path": "psc-archiver-client"
+			"path": "qbank-learner"
+		},
+		{
+			"path": "qbank-writer"
 		}
 	],
 	"settings": {

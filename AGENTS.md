@@ -1,20 +1,21 @@
-# AGENTS.md — psc-archiver workspace
+# AGENTS.md — qbank workspace
 
-Pointer file for AI coding agents (Codex, Claude Code, etc.) launched from the **workspace root**. This is a multi-root VS Code workspace ([psc-archiver-workspace.code-workspace](psc-archiver-workspace.code-workspace)) holding four repos that are **one product**: a Kerala PSC exam-question archiver.
+Pointer file for AI coding agents (Codex, Claude Code, etc.) launched from the **workspace root**. This is a multi-root VS Code workspace ([qbank-workspace.code-workspace](qbank-workspace.code-workspace)) holding five repos that are **one product**: a Kerala PSC exam-question archiver.
 
 | Project | Role | Start here |
 |---------|------|-----------|
-| **psc-archiver-api** | Backend — NestJS 11 + MongoDB. Owns the data model, auth, RBAC, and the `/api/config` registry. | [psc-archiver-api/AGENTS.md](psc-archiver-api/AGENTS.md) |
-| **psc-archiver-admin** | Staff frontend — Vite + React/JSX. The back office. Ships to `archiver.trynbuild.com`. | [psc-archiver-admin/AGENTS.md](psc-archiver-admin/AGENTS.md) |
-| **psc-archiver-client** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface. Ships to `learner.trynbuild.com`. Branch is **`main`**, not `master`. | [psc-archiver-client/AGENTS.md](psc-archiver-client/AGENTS.md) |
-| **psc-archiver-deploy** | Infrastructure — Docker Compose, Traefik, deploy/rollback scripts, and the local prod-parity stack. Branch is **`main`**, not `master`. Bringing a server up: [QUICKSTART.md](psc-archiver-deploy/QUICKSTART.md). | [psc-archiver-deploy/README.md](psc-archiver-deploy/README.md) |
+| **qbank-api** | Backend — NestJS 11 + MongoDB. Owns the data model, auth, RBAC, and the `/api/config` registry. | [qbank-api/AGENTS.md](qbank-api/AGENTS.md) |
+| **qbank-admin** | Staff frontend — Vite + React/JSX. The back office. Ships to `archiver.trynbuild.com`. | [qbank-admin/AGENTS.md](qbank-admin/AGENTS.md) |
+| **qbank-learner** | Learner frontend — Vite + React/JSX, mobile-first. Reads only the `/papers/*` consumer surface. Ships to `learner.trynbuild.com`. Branch is **`main`**, not `master`. | [qbank-learner/AGENTS.md](qbank-learner/AGENTS.md) |
+| **qbank-writer** | Writer frontend — Vite + React/JSX, Mantine, mobile-first. A fork of the old writer portal (`psc-data-builder/pdb-client`, read-only) on the new API: a writer adds questions to their assigned exam papers and sees only their own work. Calls the staff routes with a `writer` token. Being built: [roadmap](qbank-writer/docs/roadmaps/writer-portal.md). Branch is **`main`**. | [qbank-writer/AGENTS.md](qbank-writer/AGENTS.md) |
+| **qbank-deploy** | Infrastructure — Docker Compose, Traefik, deploy/rollback scripts, and the local prod-parity stack. Branch is **`main`**, not `master`. Bringing a server up: [QUICKSTART.md](qbank-deploy/QUICKSTART.md). | [qbank-deploy/README.md](qbank-deploy/README.md) |
 
 ## How to work here
 
 - **Inside one repo, that repo's own `AGENTS.md`/`CLAUDE.md` governs.** This root file only adds the layer they can't see: that sibling repos exist and how they connect.
 - **Before any change that spans repos, read [INTEGRATION.md](INTEGRATION.md).** It holds the full contract — topology, the contract-first change protocol, and the four seams that must stay in sync.
 - **pnpm only** in every repo. Never npm or yarn.
-- **One API, two frontends, two origins.** Each SPA sits behind its own nginx on its own hostname and proxies `/api` to the same never-routed API container. A change to one frontend does not automatically apply to the other — but a change to the *API* usually touches both.
+- **One API, three frontends, one origin each.** Each SPA sits behind its own nginx on its own hostname and proxies `/api` to the same never-routed API container (`qbank-writer` gets its host in Phase 8 of its roadmap). A change to one frontend does not automatically apply to the others — but a change to the *API* often touches more than one. The admin and `qbank-writer` share the staff routes (`/api/questions/*`, `/api/exam-papers/*`); the learner app reaches only `/api/papers/*`.
 
 ## The rule that bites hardest across the seam
 
@@ -28,18 +29,20 @@ The deployment equivalent: the API's **`CLIENT_URL` replaces** its built-in CORS
 
 **Never ship an em dash in a string a reader sees** — a label, button, hint, placeholder, toast, empty state, page title, meta description, or an API exception message (those render verbatim in a frontend toast). Use a comma, a colon, parentheses, or two sentences. Two exceptions only: an **en dash in a genuine numeric range** (`Questions 1–50`, `A–D`, `70–84%`) and **`—` alone as an empty-value placeholder**; an en dash joining two nouns is neither.
 
-Both frontends gate this with **`pnpm check:copy`** (`scripts/check-copy.mjs`, one allowlist per repo — `licenceLine.js` keeps its dashes because they are a regex character class). The API has no checker; its exception messages are reviewed by hand. **Code comments, JSDoc, log lines and existing markdown keep their dashes** — only what a reader sees is in scope, and this file is not.
+Every frontend gates this with **`pnpm check:copy`** (`scripts/check-copy.mjs`, one allowlist per repo — `licenceLine.js` keeps its dashes because they are a regex character class; `qbank-writer` gets its copy in Phase 1 of its roadmap). The API has no checker; its exception messages are reviewed by hand. **Code comments, JSDoc, log lines and existing markdown keep their dashes** — only what a reader sees is in scope, and this file is not.
 
-Per-repo detail: [psc-archiver-client/docs/arch/12-user-facing-copy.md](psc-archiver-client/docs/arch/12-user-facing-copy.md) (learner voice), [psc-archiver-admin/docs/arch/12-user-facing-copy.md](psc-archiver-admin/docs/arch/12-user-facing-copy.md) (staff voice), and seam 4 in [INTEGRATION.md](INTEGRATION.md).
+Per-repo detail: [qbank-learner/docs/arch/12-user-facing-copy.md](qbank-learner/docs/arch/12-user-facing-copy.md) (learner voice), [qbank-admin/docs/arch/12-user-facing-copy.md](qbank-admin/docs/arch/12-user-facing-copy.md) (staff voice), [qbank-writer/docs/arch/12-user-facing-copy.md](qbank-writer/docs/arch/12-user-facing-copy.md) (writer voice), and seam 4 in [INTEGRATION.md](INTEGRATION.md).
 
 ## Planning and roadmaps
 
 **Plan mode produces a roadmap, and roadmaps advance one phase at a time.** A plan made in plan mode is written into the owning repo as **`docs/roadmaps/<feature>.md`** (`doc/roadmaps/` in the API) — phases of `- [ ]` checklist tasks with explicit exit criteria per phase, not left as a chat reply. When implementing: do the **one** phase or task that was asked for, tick its boxes in the roadmap, report what was done, and **stop**. Do not continue into the next phase unless explicitly told to; a request that names several phases or tasks overrides this for those only. Tick a box only when the work is actually done **and** its docs are updated in the same change.
 
-A roadmap that spans repos lives in the repo owning the bulk of the work, names its owner repos up front, and follows [INTEGRATION.md](INTEGRATION.md) for the cross-repo seams. `psc-archiver-deploy` has no agent file of its own — this rule covers it. Worked example: [psc-archiver-client/docs/roadmaps/README.md](psc-archiver-client/docs/roadmaps/README.md).
+A roadmap that spans repos lives in the repo owning the bulk of the work, names its owner repos up front, and follows [INTEGRATION.md](INTEGRATION.md) for the cross-repo seams. `qbank-deploy` has no agent file of its own — this rule covers it. Worked example: [qbank-learner/docs/roadmaps/README.md](qbank-learner/docs/roadmaps/README.md).
+
+Workspace-wide roadmaps live in [docs/roadmaps/](docs/roadmaps/) here ([rename-to-qbank.md](docs/roadmaps/rename-to-qbank.md)). The writer portal's lives in its own repo, [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md), and also changes this root, `qbank-api` (Phase 7) and `qbank-deploy` (Phases 6 and 8).
 
 ## Documentation sync rule
 
-Every code change updates the owning repo's docs **in the same change**. Each repo's `CLAUDE.md`/`AGENTS.md` carries a "Documentation sync rule" mapping code areas to doc files (API: `doc/0X-*.md` + `doc/decisions/`; admin and client: `docs/arch/*` + `docs/features/*` + the shared-atoms manifest). New feature → new doc file, indexed. Cross-repo change → every touched repo's docs plus the handoff note per [INTEGRATION.md](INTEGRATION.md).
+Every code change updates the owning repo's docs **in the same change**. Each repo's `CLAUDE.md`/`AGENTS.md` carries a "Documentation sync rule" mapping code areas to doc files (API: `doc/0X-*.md` + `doc/decisions/`; admin and client: `docs/arch/*` + `docs/features/*` + the shared-atoms manifest; `qbank-writer`: `docs/arch/*` + `docs/features/*` + its roadmap's boxes). New feature → new doc file, indexed. Cross-repo change → every touched repo's docs plus the handoff note per [INTEGRATION.md](INTEGRATION.md).
 
-Deployment changes count: [psc-archiver-deploy/README.md](psc-archiver-deploy/README.md) is authoritative for anything operational (hostnames, compose services, `deploy.sh` arguments, `.env` keys). A frontend's `Dockerfile` / `nginx.conf` / `.github/workflows/` documents itself locally and links there rather than restating it.
+Deployment changes count: [qbank-deploy/README.md](qbank-deploy/README.md) is authoritative for anything operational (hostnames, compose services, `deploy.sh` arguments, `.env` keys). A frontend's `Dockerfile` / `nginx.conf` / `.github/workflows/` documents itself locally and links there rather than restating it.
