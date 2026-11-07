@@ -42,22 +42,27 @@ development (cross-origin)
     axios baseURL = "/api"         forwards /api to :5000, so it needs
                                    no CLIENT_URL entry
 
-production (same-origin per host — two hostnames, two certificates)
+production (same-origin per host — three hostnames, three certificates)
   browser ──HTTPS──▶ traefik ──┬─ Host(ADMIN_HOST)   archiver.trynbuild.com
                                │    web (nginx) ── admin SPA
                                │          ├───── /api/* ──proxy──┐
                                │          └───── /fonts/* (PDF faces)
                                │                                 │
-                               └─ Host(LEARNER_HOST) learner.trynbuild.com
-                                    learner (nginx) ── learner SPA
+                               ├─ Host(LEARNER_HOST) learner.trynbuild.com
+                               │    learner (nginx) ── learner SPA
+                               │           ├───── /api/* ──proxy──┤
+                               │           └───── /fonts/* (PDF faces)
+                               │                                  │
+                               └─ Host(WRITER_HOST)  writer.trynbuild.com (proposed)
+                                    writer (nginx) ── writer SPA
                                            ├───── /api/* ──proxy──┤
-                                           └───── /fonts/* (PDF faces)
+                                           └───── /fonts/* (Malayalam)
                                                                   ▼
-    xior baseURL = "/api" in both      api :5000 — not routed by traefik,
-    (VITE_BACKEND_URL empty)           publishes no host port
+    baseURL = "/api" in all three      api :5000 — not routed by traefik,
+    (no backend host in any bundle)    publishes no host port
 ```
 
-Two SPAs cannot both own `/` behind one origin, which is why the learner app is a second hostname rather than a path prefix. `qbank-writer` becomes a third `Host()` router the same way in Phase 8 of its roadmap (proposed `writer.trynbuild.com`); until then it has no production origin.
+Two SPAs cannot both own `/` behind one origin, which is why the learner app is a second hostname rather than a path prefix. `qbank-writer` is a third `Host()` router the same way (Phase 8 of its roadmap, prepared in the repos 2026-11-07; the server side follows the deploy QUICKSTART's "Adding the writer portal").
 
 - Backend port: **`PORT=5000`** ([qbank-api/.env](qbank-api/.env)), global prefix **`/api`**.
 - Frontend base URL: **`VITE_BACKEND_URL + "/api"`** — `VITE_BACKEND_URL=http://localhost:5000` in each frontend's `.env.development`. HTTP client is `xior` (fetch-based); all path strings live in that repo's `src/services/configs/apiPaths.js` ([admin](qbank-admin/src/services/configs/apiPaths.js), [client](qbank-learner/src/services/configs/apiPaths.js)).
@@ -737,7 +742,7 @@ Four things about it are worth carrying across the seam:
 
 Production runs on MongoDB Atlas and has no `mongo` container, so `down -v` clears nothing and **nothing in the deploy repo deletes data**. Starting a fresh MVP round means emptying the database in Atlas by hand first.
 
-### Two frontends, two origins
+### Three frontends, three origins
 
 Each SPA is its own compose service, its own image, and its own Traefik router. The API container is routed by neither and publishes no host port — both nginx tiers reach it over the internal network.
 
@@ -745,6 +750,9 @@ Each SPA is its own compose service, its own image, and its own Traefik router. 
 |---|---|---|---|---|
 | `qbank-admin` | `web` | `ghcr.io/mroshan74/qbank-admin` | `archiver.trynbuild.com` (`ADMIN_HOST`) | push to `master` → `deploy.sh web <sha>` |
 | `qbank-learner` | `learner` | `ghcr.io/mroshan74/qbank-learner` | `learner.trynbuild.com` (`LEARNER_HOST`) | push to **`main`** → `deploy.sh learner <sha>` |
+| `qbank-writer` | `writer` | `ghcr.io/mroshan74/qbank-writer` | `writer.trynbuild.com`, proposed (`WRITER_HOST`) | push to **`main`** → `deploy.sh writer <sha>` |
+
+> **Adding the writer touches every deploy once.** `deploy.sh` pulls the deploy repo and checks the server's `.env` against `.env.example`, which now names `WRITER_HOST`, `WRITER_TAG` and `WRITER_IMAGE`. Until those three keys are in the server's `.env`, **every** service's deploy stops at that check. Add them (and the DNS record) before the deploy repo's writer commit reaches the server: [qbank-deploy/QUICKSTART.md → Adding the writer portal](qbank-deploy/QUICKSTART.md#adding-the-writer-portal-to-a-running-server).
 
 **Two SPAs cannot both own `/` behind one origin** — that is why this is a second hostname rather than a path prefix. A prefix (`/app/`) would have needed a matching Vite `base`, a router `basename`, and a shift in every absolute asset path including `/fonts/…`. The rejected alternative is recorded in [qbank-learner/docs/todos/client-deployment-gaps.md](qbank-learner/docs/todos/client-deployment-gaps.md).
 
