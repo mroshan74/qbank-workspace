@@ -761,6 +761,15 @@ phase adds its seams here as it lands.
    one equals `/me/usage`. Copy: the admin's sidebar, Dashboard link and page title say
    **Workspace settings**, and its avatar menu and account modal say **Account settings**.
 
+### The ordering rule, once more
+
+**Ship the API first.** The admin's new screens call routes the old API lacks
+(`/usage/history`, a reset body). An old admin against the new API still works, except
+that its role editor would call the removed `PATCH /users/:id/roles` and get a 404, and
+its `check:drift` expects `assignableRoles`. The learner and writer frontends tolerate
+either order: the learner's change is render-only, and the writer only narrows who it
+admits.
+
 ## Deployment — the infrastructure repo, and why the origin model flips
 
 Deployment config lives in a **separate sibling repo, `qbank-deploy`** (next to the app repos, on **`main`**, not `master`). It holds the compose files, the deploy scripts, and the runbook. Details: [qbank-deploy/README.md](qbank-deploy/README.md) and [qbank-api/doc/08-deployment.md](qbank-api/doc/08-deployment.md). Commands to stand a torn-down server back up: [qbank-deploy/QUICKSTART.md](qbank-deploy/QUICKSTART.md). Plan and status: [qbank-admin/docs/roadmaps/deployment-pipeline.md](qbank-admin/docs/roadmaps/deployment-pipeline.md).
