@@ -724,6 +724,31 @@ sign-in, so a member created before the admin change lands cannot sign in at all
 customer writers, reviewers and managers are re-roled once by
 `pnpm run migrate:tenant-members -- --apply` in the API repo (dry run without the flag).
 
+## Recent seam changes (client feedback round 2)
+
+The vendor's second testing round. Owner repo `qbank-admin`; `qbank-api` changes in most
+phases, `qbank-learner` in Phase 1 and `qbank-writer` in Phase 3. Roadmap:
+[qbank-admin/docs/roadmaps/client-feedback-round-2.md](qbank-admin/docs/roadmaps/client-feedback-round-2.md);
+rationale: [decision 0058](qbank-api/doc/decisions/0058-vendor-testing-round-2.md). Each
+phase adds its seams here as it lands.
+
+1. **Editor settings blob (Phase 1)** — a tenant's `paper-defaults` row never stores
+   `traceWatermark` and every read overlays the System row's, so the render document a
+   learner downloads always carries the vendor's trace setting. An editor-document save
+   from anyone but a superadmin or a vendor `admin` keeps the stored trace setting. The
+   default `watermark.text` and `subText` are empty, and an empty text prints
+   `licensedTo` in both PDF engines (`withWatermarkText`, mirrored in the admin and the
+   learner).
+2. **Enums, permissions, endpoints (Phase 3)** — `assignableRoles` left `/api/config`,
+   `user:manage-roles` left the registry, `PATCH /users/:id/roles` is gone (404), and
+   `roleProfiles.assignedRoles` is no longer read, written or returned. The admin dropped
+   its `ASSIGNABLE_ROLE_OPTIONS` mirror and drift check; the learner's and the writer's
+   drift manifests dropped their `assignableRoles` "not mirrored" entries; the writer
+   portal admits a primary-role `writer` only. **Ship the API first**: an old admin
+   still compares `ASSIGNABLE_ROLE_OPTIONS` against a key the new API no longer
+   publishes, but every check against the new API passes once all three repos are on
+   this change.
+
 ## Deployment — the infrastructure repo, and why the origin model flips
 
 Deployment config lives in a **separate sibling repo, `qbank-deploy`** (next to the app repos, on **`main`**, not `master`). It holds the compose files, the deploy scripts, and the runbook. Details: [qbank-deploy/README.md](qbank-deploy/README.md) and [qbank-api/doc/08-deployment.md](qbank-api/doc/08-deployment.md). Commands to stand a torn-down server back up: [qbank-deploy/QUICKSTART.md](qbank-deploy/QUICKSTART.md). Plan and status: [qbank-admin/docs/roadmaps/deployment-pipeline.md](qbank-admin/docs/roadmaps/deployment-pipeline.md).
