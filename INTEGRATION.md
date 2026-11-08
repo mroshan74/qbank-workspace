@@ -755,6 +755,11 @@ phase adds its seams here as it lands.
    `POST /organizations` takes an optional `admin.password`. A typed password is final and
    is never echoed back, so every caller must treat a missing `temporaryPassword` as "you
    set it" rather than as a failure. The writer and learner apps call neither route.
+4. **Endpoints and copy (Phase 7)** — two new reads, `GET /organizations/me/usage/history`
+   and `GET /organizations/:id/usage/history` (`?months=` 1 to 12), with `apiPaths` and
+   service functions in the admin. Their periods are the allowance periods, so the last
+   one equals `/me/usage`. Copy: the admin's sidebar, Dashboard link and page title say
+   **Workspace settings**, and its avatar menu and account modal say **Account settings**.
 
 ## Deployment — the infrastructure repo, and why the origin model flips
 
