@@ -659,7 +659,11 @@ is machine-enforced.
    client could rewrite. `GET /papers/:id/render-document` gained `licensedTo` beside the
    `licence` it already carried.
 4. **Copy** — `{customer}` now resolves to the organization's printed name
-   (`branding.displayName`, else its registered name) and to nothing else. The per-paper and
+   (`branding.displayName`, else its registered name) and to nothing else. **The System
+   organization is the exception to "its registered name": it prints as its public name,
+   "QFoundry Studio" (`SYSTEM_ORGANIZATION_PUBLIC_NAME`), never the stored "System"**, so a
+   tenant downloading a shared archive paper reads "Licensed to QFoundry Studio - not for
+   resale" in both apps ([0057](qbank-api/doc/decisions/0057-provenance-is-visible-only-inside-the-owning-organization.md), D3). The per-paper and
    per-default "Prepared for" inputs are gone from both Watermark forms, and
    `traceWatermark.customerName` is gone from both `defaultPaper.js`. Two admin strings that
    still said "not for redistribution" now say **"not for resale"**, which is what D24
