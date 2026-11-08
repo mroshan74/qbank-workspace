@@ -748,6 +748,13 @@ phase adds its seams here as it lands.
    still compares `ASSIGNABLE_ROLE_OPTIONS` against a key the new API no longer
    publishes, but every check against the new API passes once all three repos are on
    this change.
+3. **Endpoints (Phases 4 and 5)** — `PATCH /users/:id` follows the parent tier
+   (`assertMayEditProfile`), and `PATCH /users/me` refuses staff other than a superadmin;
+   the admin mirrors the rule in `utils/profileEditRights.js`. `POST /users/:id/reset-password`
+   takes an optional `{ password }` and answers `{ mustChangePassword, temporaryPassword? }`;
+   `POST /organizations` takes an optional `admin.password`. A typed password is final and
+   is never echoed back, so every caller must treat a missing `temporaryPassword` as "you
+   set it" rather than as a failure. The writer and learner apps call neither route.
 
 ## Deployment — the infrastructure repo, and why the origin model flips
 
