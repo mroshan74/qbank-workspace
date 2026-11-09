@@ -267,6 +267,8 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 
 ---
 
+**A download metric counts final copies (decision [0060](qbank-api/doc/decisions/0060-metrics-count-final-copies.md), 2026-11-10).** An absent `kind` on `GET /exam-papers/downloads`, `/exam-papers/downloads/summary` and `/exam-papers/:id/downloads` means `final`; so do a customer's `downloadsThisPeriod` and the usage history series. `kind=preview` by URL still lists previews, and the trace lookup finds a row of any kind: a preview is traceable, not counted. `totals.byKind` stays in the summary for one round so a round-3 admin build keeps rendering while the API deploys first. Phased in the admin's [client-feedback-round-4.md](qbank-admin/docs/roadmaps/client-feedback-round-4.md).
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
