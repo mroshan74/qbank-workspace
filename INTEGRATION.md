@@ -254,7 +254,7 @@ Carried by [vendor-workspace-and-shared-library.md](qbank-api/doc/roadmaps/vendo
 
 ### Download and activity analytics (0059)
 
-One route family sits **outside** the papers-first contract above, on purpose. Decision [0059](qbank-api/doc/decisions/0059-download-and-activity-analytics.md); the work is phased in the admin's [client-feedback-round-3.md](qbank-admin/docs/roadmaps/client-feedback-round-3.md) (API Phases 1 to 3, admin Phases 4 to 8). **As of 2026-11-09 only Phase 0 (the docs) is done.** Each phase refreshes this block as it lands.
+One route family sits **outside** the papers-first contract above, on purpose. Decision [0059](qbank-api/doc/decisions/0059-download-and-activity-analytics.md); the work is phased in the admin's [client-feedback-round-3.md](qbank-admin/docs/roadmaps/client-feedback-round-3.md) (API Phases 1 to 3, admin Phases 4 to 8). **As of 2026-11-09 every phase is built and verified on the prod-parity stack** (177 of 177 isolation probes, a four-role Playwright walk, drift and copy checks); nothing is merged or pushed, and the deploy order below matters.
 
 - **What it measures.** Downloads of a paper over time and question additions over time: usage metrics over `createdAt`, with no paper in the denominator. Neither resolves papers first nor takes the shared `track`/`examLevel`/`yearFrom`/`yearTo` filter, and neither is drawn over the question bank's subjects, so the colour key does not apply.
 - **The routes.** `GET /exam-papers/downloads` (the cross-paper list: `from`/`to`, `examPaperId`, `downloadedBy`, `kind`, `profile`, `mode`, `q`, `organizationScope`, paging) and `GET /exam-papers/downloads/summary` (totals, a dated series, top papers, top downloaders; `bucket`, `tz`, `top`), both under the existing `exam-paper:download-audit`; `GET /analytics/activity/questions` (totals, a dated series, a per-writer table; `bank`, `status`, `createdBy`) under `analytics:view`. **No new permission.**
@@ -263,6 +263,7 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **Endpoint seam.** Every download read, the per-paper list and the lookup included, answers an enriched row: `paper { id, examName, paperCode, examType, status, isDeleted }` and `downloader { id, name, isStaff }` beside the flat `downloadedBy` string the dialog reads today. Additive, so an old admin keeps working. Admin side: `apiPaths` + `examPapersApi.js` + `analyticsApi.js`.
 - **Copy.** The admin's new pages are **Analytics** (the sidebar group), **Overview**, **Download history**, **Question activity** and **Question bank** (the former `/ai/analytics`, which redirects). A non-staff downloader prints as **Learner**.
 - **Deploy order.** The API first: everything is additive and an old admin ignores the new fields. The new admin calls routes the old API lacks.
+- **One stamp changed.** The seeder's `bulkUpsert` now writes `createdByRole: system` on every row whoever runs the import, so question activity counts people's additions and not the corpus. Insert-only: a database seeded before this keeps its seed rows as `admin` until reseeded. No frontend reads the value for anything but a fallback label.
 
 ---
 
