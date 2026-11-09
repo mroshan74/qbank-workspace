@@ -252,6 +252,18 @@ Carried by [vendor-workspace-and-shared-library.md](qbank-api/doc/roadmaps/vendo
 3. **Which colour?** A subject's colour comes from the bank-wide key, never from its rank in the current chart.
 4. **Does it need a new route?** Extend the shared filter and add a chart-ready response DTO; do not grow a route into a second shape.
 
+### Download and activity analytics (0059)
+
+One route family sits **outside** the papers-first contract above, on purpose. Decision [0059](qbank-api/doc/decisions/0059-download-and-activity-analytics.md); the work is phased in the admin's [client-feedback-round-3.md](qbank-admin/docs/roadmaps/client-feedback-round-3.md) (API Phases 1 to 3, admin Phases 4 to 8). **As of 2026-11-09 only Phase 0 (the docs) is done.** Each phase refreshes this block as it lands.
+
+- **What it measures.** Downloads of a paper over time and question additions over time: usage metrics over `createdAt`, with no paper in the denominator. Neither resolves papers first nor takes the shared `track`/`examLevel`/`yearFrom`/`yearTo` filter, and neither is drawn over the question bank's subjects, so the colour key does not apply.
+- **The routes.** `GET /exam-papers/downloads` (the cross-paper list: `from`/`to`, `examPaperId`, `downloadedBy`, `kind`, `profile`, `mode`, `q`, `organizationScope`, paging) and `GET /exam-papers/downloads/summary` (totals, a dated series, top papers, top downloaders; `bucket`, `tz`, `top`), both under the existing `exam-paper:download-audit`; `GET /analytics/activity/questions` (totals, a dated series, a per-writer table; `bank`, `status`, `createdBy`) under `analytics:view`. **No new permission.**
+- **Scope.** Every one of them filters like the trace lookup, `scopedListFilter(..., { includeSystem: false, scope })`: a tenant sees its own papers' downloads and its own writers; the vendor sees the System organization's, learner downloads included. The admin always sends `organizationScope=own`.
+- **Enum seam.** One new enum, `activityBucket` (`day`, `week`, `month`), on `/api/config` and mirrored in the admin's `enums.js` with `check:drift`. Buckets are cut on the server by `$dateTrunc` in the IANA `tz` the client names, `to` exclusive, weeks from Monday; the series is sparse and the client zero-fills in the same zone. `$dateTrunc` needs MongoDB 5.0 or later.
+- **Endpoint seam.** Every download read, the per-paper list and the lookup included, answers an enriched row: `paper { id, examName, paperCode, examType, status, isDeleted }` and `downloader { id, name, isStaff }` beside the flat `downloadedBy` string the dialog reads today. Additive, so an old admin keeps working. Admin side: `apiPaths` + `examPapersApi.js` + `analyticsApi.js`.
+- **Copy.** The admin's new pages are **Analytics** (the sidebar group), **Overview**, **Download history**, **Question activity** and **Question bank** (the former `/ai/analytics`, which redirects). A non-staff downloader prints as **Learner**.
+- **Deploy order.** The API first: everything is additive and an old admin ignores the new fields. The new admin calls routes the old API lacks.
+
 ---
 
 ## The "tagging" handoff workflow
