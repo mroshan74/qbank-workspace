@@ -97,6 +97,7 @@ Per-repo detail: [qbank-learner/docs/arch/12-user-facing-copy.md](qbank-learner/
 - Exam Papers lists original exam papers only, and custom papers have their own Custom Papers page.
 - Only published papers with questions download as a final copy (a superadmin may download any status), and only published papers are visible to another organization or a learner.
 - Editing is for drafts. A custom paper's date of exam is today or later; an original exam paper may carry a past date.
+- An original exam paper is copy-only for a customer: no final copy, no bulk download, no share link; it makes a copy and works on that. The vendor (System organization) is unchanged. Decision [0062](qbank-api/doc/decisions/0062-original-exam-papers-are-copy-only-for-customers.md).
 
 The API enforces it (decision [0040](qbank-api/doc/decisions/0040-paper-lifecycle-rules.md)); the admin app mirrors it in one helper and only hides what the API would refuse, and `qbank-writer` carries a port of that helper for the same purpose. Rollout status: [paper-lifecycle-rules.md](qbank-api/doc/roadmaps/paper-lifecycle-rules.md).
 
