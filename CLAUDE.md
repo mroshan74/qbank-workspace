@@ -110,6 +110,8 @@ A roadmap that belongs to the workspace as a whole (every repo at once, or the m
 
 The writer portal's roadmap lives in the repo that owns most of its work: [qbank-writer/docs/roadmaps/writer-portal.md](qbank-writer/docs/roadmaps/writer-portal.md). It also changes the workspace root (Phase 0), `qbank-api` (Phase 7, server-side writer limits) and `qbank-deploy` (Phases 6 and 8).
 
+Lead generation (share links with a token, a learner's consent as the lead, a tenant Leads page) is owned by `qbank-api`: [qbank-api/doc/roadmaps/share-links-and-consented-leads.md](qbank-api/doc/roadmaps/share-links-and-consented-leads.md), decision [0061](qbank-api/doc/decisions/0061-share-links-and-consented-leads.md). It also touches `qbank-learner` (Phase 3), `qbank-admin` (Phases 4 and 5), `qbank-homepage` and this root's [INTEGRATION.md](INTEGRATION.md) (Phase 0, the privacy copy and the contract section).
+
 ## Documentation sync rule
 
 Every code change updates the owning repo's docs **in the same change** — docs are part of the definition of done. Each repo's `CLAUDE.md` carries a "Documentation sync rule" table mapping code areas to doc files (API: `doc/0X-*.md` + `doc/decisions/`; admin and client: `docs/arch/*` + `docs/features/*` + the shared-atoms manifest; `qbank-writer`: `docs/arch/*` + `docs/features/*` + its roadmap's boxes). A new feature gets a new doc file, indexed in the repo's doc README. A cross-repo change updates every touched repo's docs plus the handoff note per [INTEGRATION.md](INTEGRATION.md).
