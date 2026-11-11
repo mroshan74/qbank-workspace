@@ -296,6 +296,20 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **One-time codes do not change.** SMS codes stay with Message Central (0030, 0033). Telegram Gateway is a non-goal.
 - **Deploy order.** The API first (additive; inert without a token), then the admin, then the homepage's rules line; the learner after Phase 7. **No server key is needed for any of these deploys to work:** `TELEGRAM_BOT_TOKEN` is commented out in `qbank-deploy/.env.example`, so `deploy.sh`'s key check does not ask for it, and `LEARNER_APP_URL` is derived from `LEARNER_HOST` in `compose.prod.yml`. Telegram stays off until the token is added by hand (`qbank-deploy/README.md`, "Switch Telegram on").
 
+### Mini App sign-in (0064)
+
+**Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack against a stand-in bot; a phone check with the real bot is owed.** Phase 4 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0064](qbank-api/doc/decisions/0064-telegram-mini-app-sign-in.md).
+
+- **What it is.** The learner app, opened by Telegram as a Mini App, signs the learner in from Telegram's signed launch data. The same account and the same session as the other two consumer doors; the phone number is still the identity, and it arrives once, through the bot, when the learner taps to share it. No one-time code is sent.
+- **Endpoint seam.** `POST /auth/telegram/mini-app` (`{ initData }` → a session with `telegramId`, or `{ contactRequired: true }`, or a `registrationTicket` for the existing `POST /auth/telegram/register`), and `POST /auth/telegram/mini-app/link` (needs a learner's session; ties it to the Telegram account in hand after a code sign-in inside Telegram). Learner: `AUTH_TELEGRAM_MINI_APP`, `AUTH_TELEGRAM_MINI_APP_LINK`, `signInFromTelegramMiniApp`, `linkTelegramMiniApp`.
+- **One field added to an existing answer.** The session user of every consumer door now may carry `photoUrl`, the address of the learner's Telegram picture. Additive; the learner's `UserAvatar` draws it.
+- **Enum and permission seams: nothing.** The answer is told apart by two booleans, and a learner needs no new permission.
+- **Copy seam.** Learner: `Share phone number`, `Continue with Telegram`, `Use a mobile number instead`, and the start screen's lines (listed in `qbank-learner/docs/features/consumer-auth.md`). API messages shown as they are: "Staff accounts cannot sign in here. Use QFoundry Studio instead.", "Signing in with Telegram needs an Indian mobile number. Sign in with your mobile number instead."
+- **Staff are refused at this door**, by name. The admin is where staff sign in.
+- **No new server key.** It is on wherever `TELEGRAM_BOT_TOKEN` is set, and needs the API's update loop for a first sign-in. Until the bot has a Mini App configured in BotFather (Phase 5) nothing can reach it.
+- **A side effect every app gets:** the API now sets `trust proxy`, so its per-IP rate limits count the visitor, not the frontend's nginx. Before, ten wrong sign-ins from one person locked the door for everyone behind the same nginx.
+- **Deploy order.** The API first (additive), then the learner app. An older learner build simply never calls the new routes.
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
