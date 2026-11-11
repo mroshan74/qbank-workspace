@@ -322,6 +322,20 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **Copy seam.** Bot, to a learner: `Open QFoundry`, `Open the paper`, the welcome line and "Here is your question paper..." (`qbank-api/src/telegram/telegram-messages.ts`). Commands: `/start` (Open QFoundry), `/help` (Connect a channel (for institutes)).
 - **Deploy order.** Either first. An older learner build ignores a start parameter and opens on Home; an older API never sends one. Switch the key on only when both are deployed and BotFather is set.
 
+### The paper catalogue (0065)
+
+**Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack (API probe 25 of 25; learner walk 31 of 31). Not yet seen on a phone.** Phase 6 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0065](qbank-api/doc/decisions/0065-paper-catalogue-and-in-memory-paper-cache.md).
+
+- **What it is.** The learner app's Exams tab is now a Practice hub: previous-year papers by exam level, then by year, with a year filter, a track filter and a search. The API hands over every published original paper in one answer and **the phone does the rest**: grouping, counts, filters and search make no further request.
+- **Endpoint seam.** New: `GET /papers/catalogue` (public) → `{ data: [{ id, examName, examLevel, track, paperCode, examDate, examYear, questionCount }], total }`, newest first, not paged. Learner: `API_PATHS.PAPERS_CATALOGUE`, `getPaperCatalogue`, `QUERY_KEYS.paperCatalogue`. `GET /papers/published` stays and is no longer called by the learner app.
+- **Caching is part of the contract.** The catalogue carries `Cache-Control: public, max-age=300` and an `ETag`; `GET /papers/:id/render-document` carries `private, no-cache` and an `ETag`. Both are sent already compressed. A frontend must not strip `If-None-Match` or add a cache-buster to either address, or every visit becomes a full download again. Any nginx in front must leave `Content-Encoding: gzip` responses from the API alone (the default).
+- **How fresh.** A paper's status change (archive, delete, publish) shows on the next request. Anything else (a corrected question, an organization's licence line or page defaults) can take up to five minutes to reach a learner, plus whatever the learner's own app is holding (the learner app keeps a render document for 10 minutes).
+- **Enum seam.** Nothing new on the API. The learner app now mirrors `examPaperTrack` (`EXAM_PAPER_TRACKS`, for the track filter), which it used to list under `NOT_MIRRORED`.
+- **Permission seam: nothing.** The catalogue is public like the list beside it; the render document's gate is unchanged.
+- **Copy seam.** Learner: `Practice`, `Previous year papers`, `Your level`, `Set as my level`, `Which exam are you preparing for?`, `All years`, `General`, `Technical`, `Search by name or paper code`, `Show N more`, `No papers match`. The tab bar is Home, Practice, Progress, Profile; Downloads is a row on Profile.
+- **The learner's level is kept on the device**, not on the account: no API field. A learner on a second phone is asked again.
+- **Deploy order.** The API first: an older learner build keeps calling `published`, which is unchanged. A newer learner build against an older API would get a 404 for the catalogue and show its "Failed to load exam papers" state.
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
