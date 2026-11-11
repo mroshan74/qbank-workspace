@@ -310,6 +310,18 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **A side effect every app gets:** the API now sets `trust proxy`, so its per-IP rate limits count the visitor, not the frontend's nginx. Before, ten wrong sign-ins from one person locked the door for everyone behind the same nginx.
 - **Deploy order.** The API first (additive), then the learner app. An older learner build simply never calls the new routes.
 
+### Opening a paper inside Telegram (0064 D10)
+
+**Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack against a stand-in bot (probe 20 of 20 with the switch on and off; browser walk 17 of 17). A post in a real channel, opened on a phone, is owed, and needs the BotFather step below.** Phase 5 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md).
+
+- **One grammar, parsed on both sides.** A Telegram start parameter that names a paper is `p_<paperId>` or `p_<paperId>_<ref>`: 24 hex characters, then optionally the ten-character share token. The API builds and parses it in `qbank-api/src/common/telegram-start-param.ts`; the learner app parses it in `qbank-learner/src/lib/platform/launch.js` (`parseStartParam`, `startParamPath`). **Change both or neither.** The learner's `pnpm check:telegram` and the API's `probe:telegram-bot-chat` each hold their own side.
+- **What the learner app does with it.** Before React renders, a launch whose `start_param` names a paper has its address moved to `/papers/<paperId>?ref=<ref>`, exactly what a share link opens. Everything after that (the sign-in detour, the consent question, the download's credit) reads `?ref=` as it always has, so a post opened inside Telegram is counted on the same share link as one opened in a browser. Once per launch; a reload does not put the learner back on the paper.
+- **What the bot does.** A learner who writes to the bot gets a welcome and a button into the app; `/start p_<paperId>[_<ref>]` gets a button to that paper. A staff member's one-time channel code is still tried first, so connecting a channel is unchanged. `/help` carries the channel instructions.
+- **One server key, off by default: `TELEGRAM_MINI_APP_ENABLED`.** Off, every button the bot sends is an ordinary link and a post is what it was. On, the bot's own buttons and its menu button open the learner app in place, and the button under a channel post leads to `https://t.me/<bot>?startapp=p_<paperId>_<ref>`. The web address stays in the post's text either way. It needs a public https learner address and **the bot's Main Mini App set to that address in BotFather**; a `startapp` link to a bot without one opens nothing. Runbook: `qbank-deploy/README.md`, "Open the app inside Telegram".
+- **Enum, permission and endpoint seams: nothing.** No route was added or changed. The admin's Post to Telegram dialog is untouched: where the button leads is decided on the server.
+- **Copy seam.** Bot, to a learner: `Open QFoundry`, `Open the paper`, the welcome line and "Here is your question paper..." (`qbank-api/src/telegram/telegram-messages.ts`). Commands: `/start` (Open QFoundry), `/help` (Connect a channel (for institutes)).
+- **Deploy order.** Either first. An older learner build ignores a start parameter and opens on Home; an older API never sends one. Switch the key on only when both are deployed and BotFather is set.
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
