@@ -282,6 +282,20 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **Privacy copy.** Phase 0 changed the learner Privacy Notice (a new "Sharing with a coaching organization" section, worded to be true before the checkbox exists) and the homepage policy ("Learner details from shared links"). Phase 3 adds the Profile sentence to the learner notice when the Profile section lands.
 - **Deploy order.** The API first: everything is additive, the live admin already prints "Learner", and an old learner build sends no `ref`. Then the learner, then the admin. The homepage any time after Phase 0.
 
+### Paper attempts (0066)
+
+**Status: built in the API (2026-11-12), probed 41 of 41 and load-tested on the prod-parity stack; the learner app starts using it in Phase 9.** Phase 8 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0066](qbank-api/doc/decisions/0066-paper-attempts-are-marked-by-the-server.md); the learner-side handoff is [qbank-api/doc/handover/paper-attempts-learner-prompt.md](qbank-api/doc/handover/paper-attempts-learner-prompt.md).
+
+- **What it is.** The phone runs a test or a practice session and the server keeps the score. Two requests in a session and none between: `start` answers a signed stamp and writes nothing; `submit` sends the options chosen (one character a question) and **never a score**. The server marks them against its own copy of the paper.
+- **Endpoint seam.** New, all behind a session: `POST /papers/:id/attempts/start` (`{ mode }` → `{ stamp, mode, startedAt, questionCount, durationMs?, graceMs? }`), `POST /papers/:id/attempts` (`{ stamp, attemptId, answers }` → `{ attempt, isFirstTimed, repeated, attempts, correctEver, newlyCorrect }`), `GET /papers/:id/attempts/me`, `GET /papers/me/attempts`. Superadmin: `GET /health/load`.
+- **A rule that crosses the seam: the marking is the same code twice.** The API's `src/common/paper-attempt.ts` is a port of the learner app's `questionOrder.js`, `questionAnswer.js`, `buildQuizQuestions` and `scoreAttempt`. A learner's question 7 has to be the server's question 7. **Change either side only with the other**, and run `pnpm run probe:paper-attempts` in the API, which compares the two on a real paper.
+- **Permission seam.** One new permission, `paper:attempt`, in the `user` role's defaults. No wiring and no new sign-in: the registry serves the list, and the token carries the role, so open sessions gain it.
+- **Enum seam.** One new enum on `GET /api/config`: `paperAttemptMode` (`timed`, `practice`). Listed under `NOT_MIRRORED` in the learner, admin and writer manifests for now; the learner mirrors it in Phase 9.
+- **Refusals the app must tell apart.** `404` (the stamp is no good, or the paper is no longer published), `409` (the paper changed while the learner was answering), `400` (a malformed sheet): all three end the session. A network failure or a `5xx` does not: the phone keeps the session and sends it again with the same `attemptId`, and a repeat is counted once.
+- **Copy seam.** API messages shown as they are: `This attempt has expired. Start the paper again.`, `This paper changed while you were answering. Start it again.`, `Something went wrong. Start the paper again.`, `This paper has no questions to answer yet`.
+- **Server key.** `ATTEMPT_WRITES_PER_SECOND` (optional, default 60): the most attempts written a second. Not in any deploy check; commented out in `qbank-deploy/.env.example`.
+- **Deploy order.** The API first; it is additive and nothing calls it until the learner app's Phase 9 is deployed.
+
 ### Following an institute (0065, amends 0061's learner flow and 0034 D21)
 
 **Status: built in the API, the learner app and the admin (2026-11-12), verified on the prod-parity stack (isolation script 336 of 336; a 23-step walk of both apps). Not yet seen on a phone.** Phase 7 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0065](qbank-api/doc/decisions/0065-paper-catalogue-and-in-memory-paper-cache.md), D4 to D7.
