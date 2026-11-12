@@ -321,6 +321,20 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **Copy.** A value that is not yes or no answers `400` with `Choose whether to show your name`.
 - **Privacy Notice.** `qbank-learner`'s notice has a section, "Rank lists and the leaderboard", that says who can see them and exactly what is shown of a learner who chooses to be named. Change the two together.
 
+### Practice by subject (0069)
+
+**Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack (probe 77 of 77, a 44-step walk). Not yet seen on a phone.** Phase 14 of the learner roadmap. Owned by `qbank-api` (`src/papers/practice-sets.service.ts`, `src/common/practice-sets.ts`, and `AttemptsService` for the attempts); consumed by `qbank-learner` only.
+
+- **Fixed sets.** A subject's and a topic's previous-year questions are cut into sets of 25, the same for every learner, oldest first. The app shows them newest first and never renumbers them.
+- **Endpoint seam.** `GET /papers/subjects` (every subject with its topics and counts, cacheable); `GET /papers/subjects/:scopeId/sets` (a subject's or topic's sets with the caller's `mine` on each); `GET /papers/sets/:setId` (one set's questions, answers included, each with `paperId`, `paperLabel`, `paperCode`); `POST /papers/sets/:setId/attempts/start` (no body), `POST /papers/sets/:setId/attempts` and `GET /papers/sets/:setId/attempts/me`, which answer exactly as the paper routes do. `GET /papers/me/attempts` gains `?includeSets=true`; without it the list is papers only, so an older learner build is unaffected.
+- **A set's id is its content.** The app reads, starts, links and keeps a set by `set.id`, never by its subject and number. When a set's questions change the id changes, the old one is `404` on every route, and `mine` is absent on the new one. The app must treat that `404` as "open the subject again".
+- **The order is the server's.** The app plays a set's questions in the order sent and writes its answer sheet in that order. It must not sort them, as it does a paper's.
+- **A set is practice, and not a paper.** No timed mode, no `standing`, no rank list (`GET /papers/:id/ranks` is `404` for a set's id). It earns as practice does and counts for the day's goal, the streak and accuracy by subject; it is not a paper attempted and does not earn First paper. The server decides all of it.
+- **Accuracy by subject is not a new call.** It is `subjects` on `GET /papers/me/progress`, which the app already holds.
+- **Lifecycle.** Sets are cut from published original papers only. A paper archived by staff takes its questions out of every set on the next request. Nothing in the app decides availability.
+- **Permission and enum seams: nothing new.** `paper:read` for the two reads from memory, `paper:attempt` for the rest. `scopeId` is the taxonomy's own id (`S1`, `S1T3`), sent and read as a string.
+- **Copy seam.** Learner: `By subject`, `Subjects and topics`, `Start Set 56`, `Next: Set 53`, `Carry on with Set 53`, `Practice set`, `Strong`, `Needs work`, `What you have handed in`. API messages shown as they are: `Subject not found`, `This set is not available any more. Open the subject again to see its sets.`, `These questions changed while you were answering. Start the set again.`
+- **Deploy order.** The API first; an older learner build never calls any of it.
 ### Saved questions (0067)
 
 **Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack. Not yet seen on a phone.** Phase 10 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0067](qbank-api/doc/decisions/0067-one-document-per-learner.md).
