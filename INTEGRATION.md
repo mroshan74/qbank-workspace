@@ -296,6 +296,19 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **Server key.** `ATTEMPT_WRITES_PER_SECOND` (optional, default 60): the most attempts written a second. Not in any deploy check; commented out in `qbank-deploy/.env.example`.
 - **Deploy order.** The API first; it is additive and nothing calls it until the learner app's Phase 9 is deployed.
 
+### Saved questions (0067)
+
+**Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack. Not yet seen on a phone.** Phase 10 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0067](qbank-api/doc/decisions/0067-one-document-per-learner.md).
+
+- **What it is.** A learner saves a question while practising or reviewing, and finds it again on a Bookmarks screen grouped by subject, where they can practise from the saved ones. A question is saved once, by its own id, however many papers contain it.
+- **Endpoint seam.** All behind a session and `paper:read`: `GET /papers/me/bookmarks` (`{ data: [{ questionId, paperId, subjectId?, subjectName?, savedAt }], total, max }`), `PUT /papers/me/bookmarks/:questionId` (`{ paperId }`), `DELETE /papers/me/bookmarks/:questionId`, `GET /papers/me/bookmarks/questions?page&limit&subjectId` (the same rows with `paperLabel?`, `paperCode?`, `available` and `question?`, at most 25 a page). Learner app: `API_PATHS.MY_BOOKMARKS`, `MY_BOOKMARK`, `MY_BOOKMARK_QUESTIONS`; `getMyBookmarks`, `saveBookmark`, `removeBookmark`, `getBookmarkedQuestions`.
+- **The app sends the paper, the server decides the rest.** A save names the paper the learner is looking at. The server checks that published paper holds the question and reads the subject from its own copy; the app never sends a subject.
+- **A saved question can stop being shown.** If its paper is archived, the row answers `available: false` with no `question`. The app must show that row as unavailable with a way to remove it, not hide it and not treat it as an error.
+- **Limit.** 500 a learner. The 501st save answers `409` with a sentence the app shows as it is.
+- **Enum and permission seams: nothing new.**
+- **Copy seam.** Learner: `Save`, `Saved`, `Saved questions`, `Practise saved questions`, `Remove`, `No saved questions yet`, `This question is no longer available`. API messages shown as they are: `Question not found`, and the limit sentence.
+- **Deploy order.** The API first; an older learner build never calls it.
+
 ### Following an institute (0065, amends 0061's learner flow and 0034 D21)
 
 **Status: built in the API, the learner app and the admin (2026-11-12), verified on the prod-parity stack (isolation script 336 of 336; a 23-step walk of both apps). Not yet seen on a phone.** Phase 7 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0065](qbank-api/doc/decisions/0065-paper-catalogue-and-in-memory-paper-cache.md), D4 to D7.
