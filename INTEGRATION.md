@@ -293,8 +293,19 @@ One route family sits **outside** the papers-first contract above, on purpose. D
 - **Enum seam.** One new enum on `GET /api/config`: `paperAttemptMode` (`timed`, `practice`). Listed under `NOT_MIRRORED` in the learner, admin and writer manifests for now; the learner mirrors it in Phase 9.
 - **Refusals the app must tell apart.** `404` (the stamp is no good, or the paper is no longer published), `409` (the paper changed while the learner was answering), `400` (a malformed sheet): all three end the session. A network failure or a `5xx` does not: the phone keeps the session and sends it again with the same `attemptId`, and a repeat is counted once.
 - **Copy seam.** API messages shown as they are: `This attempt has expired. Start the paper again.`, `This paper changed while you were answering. Start it again.`, `Something went wrong. Start the paper again.`, `This paper has no questions to answer yet`.
-- **Server key.** `ATTEMPT_WRITES_PER_SECOND` (optional, default 60): the most attempts written a second. Not in any deploy check; commented out in `qbank-deploy/.env.example`.
+- **Server key.** `ATTEMPT_WRITES_PER_SECOND` (optional, default 60): the most documents written a second for attempts. An attempt writes two since 0067 D4 (its own and the learner's progress), so the default is 30 attempts a second. Not in any deploy check; commented out in `qbank-deploy/.env.example`.
 - **Deploy order.** The API first; it is additive and nothing calls it until the learner app's Phase 9 is deployed.
+
+### A learner's progress (0067, D4 to D8)
+
+XP and levels, the daily goal and the streak. Owned by `qbank-api` (`src/engagement/`, `src/common/learner-progress.ts`); consumed by `qbank-learner` only. No organization sees any of it.
+
+- **Two calls, and neither sets what was earned.** `GET /papers/me/progress` answers `{ data, rules }`: `data` is XP, the week's XP, the level with where it starts and ends, the rank, the goal, today's count and whether it is met, the streak, ninety days of activity and a count a subject; `rules` are the figures a screen needs to explain it. `PUT /papers/me/progress/goal` with `{ goal }` picks the daily goal and answers the same `data`. Permission `paper:attempt`.
+- **A session's reply carries the rest.** `POST /papers/:id/attempts` now also answers `earned` (`xp`, `completionXp`, `goalReached`, `streak`, and `levelFrom` / `levelTo` when it crossed a level) and `progress` (the same object as the read). The learner app writes `progress` into its cached read, so Home is right after a quiz with no request of its own. `GET /papers/:id/attempts/me` gained `everCorrect`, one character a question.
+- **What the app sends, and what the server decides.** The app sends the answer sheet and, separately, a goal size. The server decides everything else: what each answer is worth (in full for a first on that paper, a quarter for a repeat, once a day a question), whether the session answered enough of the paper to earn its completion, whether today's goal is met, and the streak. The day is the Indian calendar day.
+- **The app holds no copy of the rules.** What an answer is worth, the goal sizes and the ranks arrive in `rules`. The one figure the app works out itself is the chip on a right answer in practice (`expectedAnswerXp` in `qbank-learner/src/lib/progress.js`): the full figure for a first, nothing said for a repeat. The result shows what the server counted.
+- **Copy.** A goal size not on offer answers `400` with `Choose one of the daily goals on offer`.
+- **Not an enum on `/api/config`.** The goal sizes and the ranks are numbers and names sent with the read they belong to, so neither frontend's drift check has a new entry.
 
 ### Saved questions (0067)
 
