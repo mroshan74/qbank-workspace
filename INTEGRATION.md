@@ -174,7 +174,7 @@ Answer these in the feature's roadmap or PR before writing code:
 - **Promotion copies, never mutates.** `POST /questions/:id/promote` (`question:promote`, the `admin` role by default) creates a System-owned copy with `bank: external`, `status: review` and `origin { questionId, organizationId, copiedAt, copiedBy }`. The origin row is untouched; a second promotion answers 409. `POST /exam-papers/:id/promote` does the same for a custom paper and its questions.
 - **Offer and browse.** A tenant may offer a published external question (`POST /questions/:id/offer`, stamps `sharing { offeredAt, offeredBy }`). The vendor's curators list every organization's published external rows at `GET /questions/submissions` (`question:promote`), offered rows first. This is the product's one deliberate cross-organization read; it is its own route, never a flag on `GET /questions`.
 - **Surfaces split by bank.** The admin's Question Bank is two groups: Previous Year Questions (Questions, My Questions, Add Question, Review, Exam Papers) and External (the same, plus Custom Papers and the vendor's Submissions). Lists send `bank=`; the edit route is shared. A customer's My Workspace is always external. The learner app is untouched.
-- **Seams.** Enums `questionBank` and `questionVerificationScope` are published by `/api/config` and mirrored in the admin's `src/lib/enums.js` (`QUESTION_BANK`, `QUESTION_VERIFICATION_SCOPE`); the client lists both as `NOT_MIRRORED`. Response fields `bank`, `quality.verifiedScope`, `origin` and `sharing` are admin-only and never reach `/api/papers/*`. **Deploy order:** the API's config change ships before the admin's drift manifest, because `check:drift` flags unlisted keys. **And the database must be backfilled once**, right after the API build that carries `bank` is deployed: `pnpm run migrate:question-banks -- --apply` in the API repo (dry run without the flag; on a server, the same script inside the api container, see the deploy QUICKSTART). Until it runs, every list page sends a bank that no existing row carries and shows nothing. Rows created by the new build are stamped on write and need no backfill.
+- **Seams.** Enums `questionBank` and `questionVerificationScope` are published by `/api/config` and mirrored in the admin's `src/lib/enums.js` (`QUESTION_BANK`, `QUESTION_VERIFICATION_SCOPE`); the client lists both as `NOT_MIRRORED`. Response fields `bank`, `quality.verifiedScope`, `origin` and `sharing` are admin-only and never reach `/api/papers/*`. **Deploy order:** the API's config change ships before the admin's drift manifest, because `check:drift` flags unlisted keys. Rows are stamped with `bank` on write; there is no backfill, because the database is rebuilt on each major update.
 
 - **Question lifecycle ([0045](qbank-api/doc/decisions/0045-question-edit-lock-and-source-types.md), built 2026-10-19; phased in [question-bank-fixes.md](qbank-admin/docs/roadmaps/question-bank-fixes.md)).**
   - **Editing:** a question's content is editable in `draft` and `review` only. `PATCH` refuses `published` and `archived`.
@@ -183,7 +183,7 @@ Answer these in the feature's roadmap or PR before writing code:
   - **Review quick edit:** `PATCH /questions/:id/review-edit` (`question:publish`) corrects the content of a question in `review`, whoever wrote it.
   - **Source types:** the pickable ones are `current_affairs` and `custom`, published by `/api/config` as `standaloneSourceType` (mirrored in the admin's `STANDALONE_QUESTION_SOURCE_TYPES`; listed in the client's `NOT_MIRRORED`). `exam_paper` stays as the automatic PYQ type. Built 2026-10-19 (Phase 3).
   - **One helper per side:** `src/common/question-lifecycle.ts` and `src/lib/questionLifecycle.js`.
-  - **Deploy order:** run `migrate:question-source-types` from the new api image before that api restarts (QUICKSTART has the commands); the old api already accepts `custom`. Then the API ships before the admin, whose `check:drift` expects `standaloneSourceType`.
+  - **Deploy order:** the API ships before the admin, whose `check:drift` expects `standaloneSourceType`. No row migration: the database is rebuilt on each major update.
 
 - **A question number is an exam-paper fact; the option layout is the writer's choice** (admin rule, 2026-10-19, revised the same day after the client's review; phased in [question-writer-revamp.md](qbank-admin/docs/roadmaps/question-writer-revamp.md)). The admin asks for `source.questionNumber` only on a question of an original exam paper (`examType: exam_paper`, whose questions carry the `exam_paper` source type); any other question (custom paper, standalone) saves no number. `layouts.optionLayout` is offered on every question (the writer chooses how its options print, `twoColumn` by default); the paper editor may still set a layout per item in the paper document and only falls back to the record's value. The API keeps both fields optional and never requires a number for any paper type, so this is a frontend rule with no seam to deploy.
 
@@ -900,9 +900,7 @@ rationale: [decision 0039](qbank-api/doc/decisions/0039-tenant-member-role-and-h
 **Ship the API first**, for the same two reasons as the consolidated-role change: the
 admin's `pnpm check:drift` checks `PRIMARY_ROLE_OPTIONS` in subset mode, so the API alone
 passes and the frontend alone fails; and the admin's own `STAFF_PRIMARY_ROLES` gates
-sign-in, so a member created before the admin change lands cannot sign in at all. Existing
-customer writers, reviewers and managers are re-roled once by
-`pnpm run migrate:tenant-members -- --apply` in the API repo (dry run without the flag).
+sign-in, so a member created before the admin change lands cannot sign in at all.
 
 ## Recent seam changes (client feedback round 2)
 
