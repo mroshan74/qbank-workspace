@@ -170,6 +170,10 @@ It has its own decision, **[0071](../../qbank-api/doc/decisions/0071-one-trace-c
 - [x] `claimId` is passed in `usePaperDownload.js`. The one record call covers all three paths: save to device, Send to my Telegram, and the Mini App file.
 - [x] `DownloadsPage.jsx`: each row is dated by its latest download (`lastDownloadedAt`), and the comment is updated. Showing `downloadCount` is left for the canvas (hard rule 16).
 - [x] **Docs:** `docs/features/paper-download.md` and `exams-downloads-profile.md`. `lint` (two warnings that were already there), `check:copy` and `build` all pass.
+- [x] **Follow-up, at the owner's request:** each Downloads row now shows the day it was last downloaded, with the year ("13 Nov 2026"), under the paper's name, and there is no date beside the chevron. A paper that is gone says only "No longer available". The download count stays off, because the owner judged it of little use to a learner.
+  - The canvas's "Downloads" board was redrawn first (versions 80 and 81), and the repo copy follows it.
+  - `lint`, `check:copy`, `check:theme` and `build` all pass. The learner container was rebuilt, and the Day and Night screenshots match the board.
+- [x] **Commit the follow-up**, approved by the owner.
 - [x] **Commit**, approved by the owner.
 
 **Exit**, checked on the prod-parity stack:
