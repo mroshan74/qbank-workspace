@@ -1,6 +1,6 @@
 # Testing fixes, November 2026
 
-**Status:** Phases 0 and 1 complete (Phase 1's check on prep is owed by the owner). Phases 2 to 4 not started. **Next: Phase 4**, then 3, then 2.
+**Status:** Phases 0, 1 and 4 complete (Phase 1's check on prep is owed by the owner). Phases 2 and 3 not started. **Next: Phase 3**, then 2.
 
 **Owner repos:** `qbank-api` (Phases 1 and 2), `qbank-admin` (Phases 2, 3 and 4), `qbank-learner` (Phase 2), `qbank-deploy` (Phase 1, only if the cause is operational) and this root repo (this file, plus `INTEGRATION.md` in Phases 2 and 3).
 
@@ -206,20 +206,23 @@ It gets a new decision, **`qbank-api/doc/decisions/0071-one-trace-code-per-paper
 
 ## Phase 4: monochrome sidebar icons
 
-- [ ] Remove the `sectionSidebarIconClass(section)` call in `qbank-admin/src/components/sidebar/NavItem.jsx` and `ExpandableNavItem.jsx`, so the icon follows the label's colour states. Keep the `section` field on nav entries, because title chips and stat tiles still use it.
-- [ ] Drop `SECTION_SIDEBAR_ICON` and the `--section-*-sidebar` tokens from `src/lib/sections.js` and `src/index.css` if nothing else reads them. Check with grep first.
-- [ ] **Docs:**
-  - amend D2 in `docs/roadmaps/admin-visual-refresh.md`, with a dated note
-  - `docs/arch/08-layout-navigation.md`: the Sections table and NavItem
+- [x] Remove the `sectionSidebarIconClass(section)` call in `qbank-admin/src/components/sidebar/NavItem.jsx` and `ExpandableNavItem.jsx`, so the icon follows the label's colour states. *`Sidebar.jsx` no longer passes `section` to either. The `section` field stays on nav entries, because `findNavEntry` gives each page its title chip from it.*
+- [x] Drop `SECTION_SIDEBAR_ICON` / `sectionSidebarIconClass` from `src/lib/sections.js` and the `--section-*-sidebar` tokens from `src/index.css`: 6 `@theme` lines, 6 light values and 5 Black overrides. Grep found no other reader.
+- [x] **Docs:**
+  - D2 in `docs/roadmaps/admin-visual-refresh.md`, amended with a dated note
+  - `docs/arch/08-layout-navigation.md`: the Sections rule ("two places") and the NavItem icon
   - `docs/arch/06-components.md`: the section token table
-  - `DESIGN.md`: the sidebar row and the "three places" list
-  - the comment in `navConfig.js`
-- [ ] `pnpm lint`, `pnpm build` and `pnpm check:copy`. Commit in `qbank-admin`.
+  - `DESIGN.md`: the "two places" list
+  - `docs/arch/11-shared-atoms-manifest.md`: the `lib/sections.js` row
+  - `docs/features/dashboard.md`
+  - the comments in `navConfig.js`, `sections.js` and `index.css`
+- [x] `eslint` on the changed files, `pnpm check:copy` (795 files) and `pnpm build` all pass.
+- [x] Commit in `qbank-admin`, approved by the owner.
 
 **Exit:**
 
-- In Light (every sidebar preset) and Black, every top-level icon is grey at rest and white on hover and when active.
-- Page-title chips keep their colour.
+- [x] On the local stack (Light, the default Indigo sidebar), every sidebar icon is monochrome. Measured: the only icon colours are the label's at rest (`oklch(0.78 0.025 285)`), white on the active row, and the profile card's bell icon. Black already resolved the tints to `currentColor`, so nothing changes there. The other five sidebar presets share the same tokens.
+- [x] The stat tiles keep their colours. Title chips are painted by `sectionChipClass`, which is untouched.
 
 ---
 
