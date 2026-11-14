@@ -1,6 +1,6 @@
 # Testing fixes, November 2026
 
-**Status:** Phases 0, 1 and 4 complete (Phase 1's check on prep is owed by the owner). Phases 2 and 3 not started. **Next: Phase 3**, then 2.
+**Status:** Phases 0, 1, 3 and 4 complete (Phase 1's check on prep is owed by the owner). Phase 2 not started. **Next: Phase 2.**
 
 **Owner repos:** `qbank-api` (Phases 1 and 2), `qbank-admin` (Phases 2, 3 and 4), `qbank-learner` (Phase 2), `qbank-deploy` (Phase 1, only if the cause is operational) and this root repo (this file, plus `INTEGRATION.md` in Phases 2 and 3).
 
@@ -170,39 +170,42 @@ It gets a new decision, **`qbank-api/doc/decisions/0071-one-trace-code-per-paper
 
 ## Phase 3: Integrations > Telegram in the main menu
 
-- [ ] `src/utils/routeLinks.js`: add `TELEGRAM_LINK = "/integrations/telegram"`.
-- [ ] `src/components/sidebar/navConfig.js`:
-  - In `mainLinks`, after Leads, add an **Integrations** group (`Plug` or `Blocks` icon, `SECTION.NEUTRAL`).
-  - Its one sub-item is **Telegram** (`Send` icon, `requires: { anyPerm: ["telegram:manage"] }`). The group hides itself when no child is visible.
-  - Remove `telegram:manage` from the Settings entry's gate.
-- [ ] **Move the page.**
-  - Move `src/pages/settings/sections/telegram/*` and `hooks/useTelegramChannels.js` / `useTelegramPosts.js` to `src/pages/integrations/telegram/`.
-  - Give it a page shell like `LeadsPage.jsx` (`Container`, `PageBreadcrumb`, `HeaderTitle`) instead of `SettingsPanel`.
-  - Fix the `TELEGRAM_QUERY_KEY` import in `src/modals/post-to-telegram/hooks/usePostToTelegram.js`.
-- [ ] **Router and settings.**
-  - `src/App.jsx`: add the new route, gated `RequireAccess anyPerm ["telegram:manage"]`, and redirect `/settings?section=telegram` to `TELEGRAM_LINK`.
-  - Drop `telegram` from the settings `SECTIONS` map and `SETTINGS_NAV_GROUPS`, and drop `telegram:manage` from the settings route gate.
-  - Update the settings subtitle copy.
-- [ ] **Repoint links and copy.**
-  - `PostToTelegramContent.jsx` ("Open Telegram settings", "Manage channels") points at `TELEGRAM_LINK`.
-  - The toast in `usePostToTelegram.js` changes to "...Follow it under Integrations, Telegram."
-  - Update the comments in `telegramLabels.js`, `events/listeners.js` and `PostToTelegramModal.jsx`.
-- [ ] **Docs:**
-  - `docs/features/telegram.md`
-  - `docs/features/settings.md`
+- [x] `src/utils/routeLinks.js`: `INTEGRATIONS_LINK = "/integrations"` and `TELEGRAM_LINK = "/integrations/telegram"`.
+- [x] `src/components/sidebar/navConfig.js`:
+  - In `mainLinks`, after Leads, an **Integrations** group (`Plug`, `SECTION.NEUTRAL`, no gate of its own).
+  - Its one sub-item is **Telegram** (`Send`, `requires: { anyPerm: ["telegram:manage"] }`).
+  - `telegram:manage` is off the Workspace settings entry's gate.
+- [x] **Moved the page** with `git mv`.
+  - `src/pages/settings/sections/telegram/TelegramSection.jsx` became `src/pages/integrations/telegram/TelegramPage.jsx`, with its three `components/` and the two hooks under `hooks/`.
+  - The page shell is `Container`, `PageBreadcrumb` (Integrations / Telegram), `HeaderTitle` (the old hint is its subtitle; the chip comes from the nav entry) and one `Panel` in place of `SettingsPanel`.
+  - The `TELEGRAM_QUERY_KEY` import in `usePostToTelegram.js` is fixed.
+- [x] **Router and settings:**
+  - `App.jsx`: `/integrations/telegram` is gated `RequireAccess anyPerm ["telegram:manage"]`, and `/integrations` lands on it.
+  - The old `/settings?section=telegram` is redirected by `src/pages/settings/components/TelegramSettingsRedirect.jsx`, a layout route **outside** the settings gate, so an account holding only `telegram:manage` follows an old link to Telegram, not to the Dashboard.
+  - `telegram` is gone from the settings `SECTIONS` map and `SETTINGS_NAV_GROUPS`, and `telegram:manage` from the settings route gate.
+  - The Settings subtitle never named Telegram, so it is unchanged.
+- [x] **Links and copy:**
+  - `PostToTelegramContent.jsx`: both links go to `TELEGRAM_LINK`, and "Open Telegram settings" is now "Connect a channel".
+  - The quiz toast in `usePostToTelegram.js` now reads "Follow it under Integrations, Telegram."
+  - The comments in `telegramLabels.js`, `events/listeners.js`, `PostToTelegramModal.jsx` and `useTelegramChannels.js` are updated.
+- [x] **Docs:**
+  - `docs/features/telegram.md`: a dated note, the file table, the route row and the copy list
+  - `docs/features/settings.md`: the table row is removed and the Telegram section is replaced by a note on where it went
   - `docs/features/README.md`
-  - `docs/arch/03-routing-auth.md`
+  - `docs/arch/03-routing-auth.md`: the route tree and the settings gate
   - `docs/arch/04-event-bus.md`
-  - `docs/arch/08-layout-navigation.md`: the sidebar tree, which also fixes the stale Settings line
-  - a handoff note in `INTEGRATION.md` if it names "Workspace settings"
-- [ ] `pnpm lint`, `pnpm build` and `pnpm check:copy`. Commit in `qbank-admin`, and in the root if `INTEGRATION.md` changed.
+  - `docs/arch/08-layout-navigation.md`: the sidebar tree, which also fixes the stale "Settings" line, and the Sections table
+  - root `INTEGRATION.md`: one line in the Telegram status
+- [x] `eslint` (no errors; one warning that was already there), `pnpm check:copy` (796 files) and `pnpm build` all pass.
+- [x] **Added on review:** a vendor-specific "no bot" message. The owner, as superadmin, opened the page on the dev API (which has no bot token) and read the customer's line, "Get in touch with us to turn it on", which looked like a permission problem. `telegramNotSetUp(isVendorWorkspace)` in `telegramLabels.js` now gives the vendor "This server has no Telegram bot. Telegram is off for every organization until the bot is added to this server's settings." on the page and in the Post to Telegram dialog, and the customer keeps the old line. Checked in the browser with the status answer stubbed: 2 of 2. `docs/features/telegram.md` is updated.
+- [x] Commit in `qbank-admin` and the root, approved by the owner.
 
-**Exit:**
+**Exit:** a Playwright walk on the rebuilt local stack passed 10 of 10 checks.
 
-- An admin sees Integrations > Telegram next to Analytics and Leads.
-- A role without `telegram:manage` sees no Integrations group.
-- The old settings URL lands on the new page.
-- "Open Telegram settings" in the post dialog goes there.
+- [x] The QA Client's owner sees Integrations > Telegram in Main next to Analytics and Leads, and the page loads with its channel and recent posts.
+- [x] A member sees no Integrations group, and `/integrations/telegram` sends them to the Dashboard.
+- [x] `/settings?section=telegram` and `/integrations` both land on the Telegram page, and Workspace settings has no Telegram entry.
+- [x] "Connect a channel" in the empty Post to Telegram dialog links to `TELEGRAM_LINK`. Checked in code: the QA Client has a channel, so the dialog's empty state was not walked.
 
 ## Phase 4: monochrome sidebar icons
 
