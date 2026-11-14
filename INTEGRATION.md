@@ -548,10 +548,12 @@ Three contract details worth carrying forward:
   configured `9` at 6.75pt.
 - **No PDF work moved to the server.** Every byte is still rendered in the
   browser; the backend's only involvement is the licence text and the
-  per-paper download log. A merged batch writes **one `ExamPaperDownload` row per
-  paper**, each with its own trace code, after the file reaches the user. The
-  unique `traceId` makes a replay idempotent, which is what lets the client retry
-  a failed record safely.
+  per-paper download log. A merged batch records **each paper** under its own
+  trace code, after the file reaches the user. Since decision
+  [0071](qbank-api/doc/decisions/0071-one-trace-code-per-paper-per-user.md) the
+  code is the account's one code for that paper, and the record adds a download
+  to that copy's row; the claim's `claimId`, sent back on the record, is what
+  makes a replay idempotent and lets the client retry a failed record safely.
 
 See [decision 0025](qbank-api/doc/decisions/0025-app-settings-store.md) for
 why this is a new module rather than a field on `/api/config`.
@@ -627,8 +629,8 @@ The Consumer Download MVP added a **second frontend** and the API surface behind
 | `GET /api/papers/published` | `@Public()` | Learner list. Fixes `examType` to `exam_paper` rather than inheriting the admin default |
 | `GET /api/papers/:id` | `@Public()` | Summary for the shared link **before** sign-in. No questions, no answers |
 | `GET /api/papers/:id/render-document` | `paper:read`, 20/min | The one content endpoint |
-| `POST /api/papers/:id/downloads/claim` | `paper:download`, 60/hr | → `{ traceId, customerId }`. **The entitlement gate** |
-| `POST /api/papers/:id/downloads` | `paper:download` | Records the completed download; idempotent on `traceId` |
+| `POST /api/papers/:id/downloads/claim` | `paper:download`, 60/hr | → `{ traceId, customerId, claimId }`. **The entitlement gate**. The learner's existing code for the paper since 0071 |
+| `POST /api/papers/:id/downloads` | `paper:download` | Records the completed download on the copy's row; idempotent on the claim's `claimId` (0071) |
 | `GET /api/papers/me/downloads` | `paper:download` | The learner's own history |
 
 **4. Copy — and an inversion worth knowing.** On this seam the API writes learner-facing sentences itself (`"That code is incorrect."`, `"Please wait 48 seconds before asking for another code."`), and the client surfaces `message` **verbatim** rather than mapping per status code. Two different `429`s — the OTP cooldown and the throttler — are already distinguishable in plain language, so mapping them would only make the wording worse.
@@ -638,7 +640,13 @@ The Consumer Download MVP added a **second frontend** and the API surface behind
 ### Contract details that catch people out
 
 - **Every not-allowed outcome on `/api/papers/*` is a `404`** — including a malformed id, which the admin path answers with `400 Invalid exam paper id`. A learner following a mangled link has hit a missing page, not made a bad request, and a shared link must not be usable to confirm that an unpublished paper exists.
-- **The server mints the trace code; the browser only draws it.** The record route ignores any client-supplied `customerId` / `downloadedBy`, and the client's ported PDF engine deliberately has **no** `generateTraceId`. Replaying a record with the same code is idempotent, which is what lets the client retry safely. [Decision 0031](qbank-api/doc/decisions/0031-server-minted-trace-code.md).
+- **The server mints the trace code; the browser only draws it.** The record route ignores any client-supplied `customerId` / `downloadedBy`, and the client's ported PDF engine deliberately has **no** `generateTraceId`. [Decision 0031](qbank-api/doc/decisions/0031-server-minted-trace-code.md).
+- **One trace code per paper per account** ([decision 0071](qbank-api/doc/decisions/0071-one-trace-code-per-paper-per-user.md), 2026-11-14). The contract, for every client that downloads (admin row, editor, batch, Post to Telegram; learner save, Send to my Telegram, Mini App file):
+  - Both claims (`POST /exam-papers/:id/downloads/claim`, `POST /papers/:id/downloads/claim`) answer the account's **existing** code for the paper when it has one, plus a fresh **`claimId`**. A new code comes only for a first download, or after the paper is reopened, edited and published again.
+  - **Send `claimId` back on the record** (`POST /exam-papers/:id/downloads`, `POST /papers/:id/downloads`). It is what makes a retried record a no-op; without it (an older client) every record counts.
+  - A row is a **copy**: download reads answer one row per code with `downloadCount` (downloads that contain the paper; an answer key on its own is not one), `modeCounts`, `profileCounts`, `lastDownloadedAt`, and for staff `traceIdAliases` (older codes of the same copy, which the lookup and the `q` search also match). Lists sort by the latest download.
+  - The summary counts each download in the range, not each row, and adds `totals.copies`. The learner's `GET /papers/me/downloads` rows carry `lastDownloadedAt` and `downloadCount` (every content type).
+  - Deploy the API first; both frontends tolerate an API without the new fields. No migration: the database is rebuilt on each major update.
 - **`otpSent: false` is a normal answer, not a failure.** A new learner's journey is `start` (code sent) → `register` (`otpSent: false`, because the code from `start` is still live) → code step. The client keeps the `devCode` from `start` and renders the code step on `false`.
 - **The mobile number goes in the request body on every mobile-auth call** — the per-number rate limit reads it from there, and normalises first, so `+91 98…` and `098…` cannot be alternated for two budgets.
 - **`dateOfBirth` is `YYYY-MM-DD` in, full ISO out.** The request accepts what a native `<input type="date">` submits; the response returns `"1998-05-14T00:00:00.000Z"`.

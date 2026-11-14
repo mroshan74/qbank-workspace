@@ -1,6 +1,6 @@
 # Testing fixes, November 2026
 
-**Status:** Phases 0, 1, 3 and 4 complete (Phase 1's check on prep is owed by the owner). Phase 2 not started. **Next: Phase 2.**
+**Status:** All phases (0 to 4) complete and committed, 2026-11-14. One check is still owed by the owner: Phase 1's first-try connect on prep. Nothing is pushed.
 
 **Owner repos:** `qbank-api` (Phases 1 and 2), `qbank-admin` (Phases 2, 3 and 4), `qbank-learner` (Phase 2), `qbank-deploy` (Phase 1, only if the cause is operational) and this root repo (this file, plus `INTEGRATION.md` in Phases 2 and 3).
 
@@ -90,83 +90,103 @@ This overturns three earlier rules:
 - the per-download granularity of decisions [0021](../../qbank-api/doc/decisions/0021-exam-paper-download-log.md) and [0031](../../qbank-api/doc/decisions/0031-server-minted-trace-code.md);
 - the "aggregate, never increment" rule in [0061](../../qbank-api/doc/decisions/0061-share-links-and-consented-leads.md) D4.
 
-It gets a new decision, **`qbank-api/doc/decisions/0071-one-trace-code-per-paper-per-user.md`**, which amends all three. The pattern has a precedent in the `Lead` row with `touches` (0061 D5).
+It has its own decision, **[0071](../../qbank-api/doc/decisions/0071-one-trace-code-per-paper-per-user.md)**, which amends all three. The pattern has a precedent in the `Lead` row with `touches` (0061 D5).
+
+**Changed from the plan while building**, all recorded in 0071:
+
+- **Each row keeps its downloads as events, not only counters.** Each download is stored on the row as an event, `{ at, mode, profile, claimId }`, capped at 500.
+  - Counts over a date range (the summary, the share-link counts, the organization usage) unwind the events, so they stay exact. The plan's "time series by `lastDownloadedAt`, with a caveat" is gone, and so is the risk "Lost per-download history".
+  - The events also replace the plan's `recentClaims`: a retry is recognised by its `claimId` among the events.
+- **No migration** (the owner, 2026-11-14): the database is rebuilt on each major update, so there are no old rows to carry forward. A fold script and a startup backfill were built, then removed on that instruction. The unique index is therefore a plain one, and `contentRevision` is required on a row.
+- **`copies` counts every code taken in the range**, an answer key on its own included, so it matches the number of rows in the list. The first build counted only paper downloads, which showed "18 / 17".
+- **The learner's screen shows no count yet.** The learner's Downloads row is dated by the latest download, and the API sends `downloadCount`. Showing that count is a design change, so it waits for the canvas (learner hard rule 16).
 
 ### API (`qbank-api`)
 
-- [ ] **Schema** (`src/exam-papers/schemas/exam-paper-download/exam-paper-download.schema.ts`):
+- [x] **Download schema** (`src/exam-papers/schemas/exam-paper-download/exam-paper-download.schema.ts`):
   - New fields:
-    - `downloadCount` (counts `paper` and `both` downloads)
-    - `modeCounts {paper, both, key}`
-    - `profileCounts {print, mobile}`
-    - `lastDownloadedAt`
     - `contentRevision`
-    - `recentClaims` (a capped array of claim nonces)
-    - `traceIdAliases[]` (old codes folded in by the migration)
-  - A partial unique index on `{examPaperId, downloadedBy, kind, contentRevision}` for rows with a user.
-  - A multikey index on `traceIdAliases`.
-- [ ] **Paper schema:** add `contentRevision` (default 0). `changeStatus` bumps it on draft → published.
-- [ ] **Claim** (staff `ExamPapersService.claimDownload`, learner `PapersService.claimDownload`):
-  - Look up the row for (paper, caller, kind, paper's `contentRevision`) and return its `traceId` if found. Otherwise mint one with `generateTraceId` (`src/common/trace-id.ts`).
-  - Also return a random `claimId` nonce. This stays stateless: no claims table.
-- [ ] **Record** (`ExamPapersService.recordDownload`):
-  - Upsert keyed on `traceId`, filtered on `recentClaims: {$ne: claimId}`.
-  - On insert, `$setOnInsert` as today.
-  - On every record:
-    - `$inc` `downloadCount` (unless the mode is `key`), `modeCounts.<mode>` and `profileCounts.<profile>`
-    - `$set` `lastDownloadedAt`
-    - `$push` the `claimId` to `recentClaims` with `$slice: -20`
-  - A retry with the same `claimId` is a no-op, which keeps 0031's retry safety.
-  - Share-link attribution stays first-wins.
-- [ ] **Reads:**
-  - `lookupDownload` matches `traceId` or `traceIdAliases`.
-  - `downloadsSummary`, `downloadCountsByShareLink` and the organization usage counts (`organizations.service.ts`) use `$sum: '$downloadCount'`.
-  - `byMode` and `byProfile` come from the counters.
-  - The time series buckets by `lastDownloadedAt`, and that caveat is documented.
-  - The DTOs expose `downloadCount`, `lastDownloadedAt`, `modeCounts` and `profileCounts`.
-- [ ] **Telegram channel post** (`telegram-posts.service.ts`): reuses the poster's code like any other staff download. 0071 notes that one code then covers the poster's own copies and the channel post.
-- [ ] **Migration:** `src/scripts/collapse-download-traces.ts`, modelled on `migrate-question-source-types.ts`. It is dry-run by default, writes only with `--apply`, is safe to re-run, and gets a `package.json` script.
-  - Group by (paper, user, kind) and keep the earliest row.
-  - Sum the counters and move the other rows' codes into `traceIdAliases`. Those codes are printed on PDFs in the wild and must still resolve.
-  - Then delete the duplicates.
-- [ ] **Tests:**
+    - `downloadCount` (counts `paper` and `both` downloads)
+    - `modeCounts`
+    - `profileCounts`
+    - `lastDownloadedAt`
+    - `events`
+    - `traceIdAliases`
+  - The counters have no schema defaults, because a default collides with `$inc` on an upsert's insert.
+  - Indexes:
+    - a partial unique `{ examPaperId, downloadedBy, kind, contentRevision }`
+    - `{ traceIdAliases }` (sparse)
+    - `{ organizationId, lastDownloadedAt }`
+  - The shared rules are in `src/common/download-events.ts`.
+- [x] **Paper schema:** `contentRevision` (default 0). `changeStatus` bumps it on draft → published.
+- [x] **Claim:** both claims call `ExamPapersService.issueTraceCode`, which returns the existing code or mints one, plus a `claimId`.
+- [x] **Record:** an upsert on the code or an alias.
+  - It adds an event and bumps the counters only if no event carries this `claimId`.
+  - On a duplicate-key error it either treats the record as a retry (it changes nothing) or, when two claims raced, folds the second code into the first row's aliases.
+  - Share-link credit stays first-wins.
+- [x] **Reads:**
+  - The lookup and the prefix search match aliases.
+  - The lists show one row per copy, sorted by the latest download. Range, layout and content-type filters use an `$elemMatch` on events.
+  - The summary unwinds events and gains `totals.copies`.
+  - The share-link counts and the organization usage count events.
+  - The DTOs expose the counters.
+- [x] **Telegram channel post:** reuses the poster's code, as noted in 0071.
+- [x] **No migration** (D7 of 0071): the database is rebuilt on each major update. The fold script and startup backfill built first were removed, and the unique index is a plain one.
+- [x] **Tests:** the API keeps no spec files (its CLAUDE.md), so these are a probe, `src/scripts/probe-download-traces.ts` and `pnpm run probe:download-traces`. It checks:
   - claim reuse, and a new code after a republish
   - a retry does not double count
   - a key-only download is not counted as a paper download
-  - an alias lookup resolves
-- [ ] **Docs:**
+  - the lookup
+  - the summary
+  - the learner's list
+- [x] **Docs:**
   - decision 0071
-  - amending notes in 0021, 0031 and 0061
-  - `doc/07-future-work.md`
-  - the API's downloads doc
-  - `INTEGRATION.md`: `claimId` on the claim response and the record body, and the new response fields
-- [ ] **Commit** in `qbank-api` and the root.
+  - the amendment notes in 0021, 0031 and 0061
+  - `doc/02-modules.md`, `doc/03-data-model.md` and `doc/07-future-work.md`
+  - `doc/README.md`, `ARCHITECTURE.md` and the API's `CLAUDE.md`
+  - `INTEGRATION.md` (the contract, plus the learner route table)
+- [x] **Commit** in `qbank-api` and the root, approved by the owner.
 
 ### Admin (`qbank-admin`)
 
-- [ ] Send `claimId` from every claim → record caller:
-  - `usePaperEditor.js`
-  - `usePaperDownload.js` and `exportPaperPdf.js`
+- [x] **`claimId` on every record:**
+  - `exportPaperPdf.js`: `buildPaperExport` passes it on, and `buildDownloadRecord` sends it.
+  - `usePaperDownload.js`
   - `runBatchExport.js`
   - `usePostToTelegram.js`
-- [ ] **Download history** (`pages/analytics/DownloadHistory.jsx`, `DownloadsTableRow`, `DownloadKpis`, `TopPapersTable`, `TopDownloadersTable`, `modals/download-history/*`):
-  - show a count and the last-downloaded date per code, with an edition breakdown in the row detail;
-  - the KPIs read "Downloads" (the sum) and "Copies" (the number of codes).
-- [ ] **Docs:** the downloads and analytics feature docs and the `apiPaths` entry. Then `pnpm lint`, `pnpm build` and `pnpm check:copy`, and commit.
+  - `usePaperEditor.js`
+  - The batch's "retry failed records" comment now explains why a retry is safe.
+- [x] **Download history:**
+  - **Table:** the column is now "Last downloaded", with a "First on" line under it when the code is older. There is a new Downloads column (with "Plus N answer key(s)" under it), and Edition and Content show each value with its count. The toolbar total is copies.
+  - **Lookup result:** shows the downloads count, the summaries, and "Also issued as ...".
+  - **Per-paper dialog:** shows the count and the summaries.
+  - **KPI strip:** a new **Copies** tile. Downloads leave out an answer key on its own, and the phone share is taken over every download.
+  - The labels live in `helpers/downloadLabels.js`.
+- [x] **Docs:** `docs/features/analytics-hub.md`. `lint`, `check:copy` and `build` all pass.
+- [x] **Commit**, approved by the owner.
 
 ### Learner (`qbank-learner`)
 
-- [ ] Pass `claimId` in `src/pages/paper/hooks/usePaperDownload.js` on all three record paths: save to device, Send to my Telegram, and the Mini App file.
-- [ ] Update the comment and copy in `pages/downloads/DownloadsPage.jsx`. "Minted per download" no longer holds: a re-download keeps the same code.
-- [ ] **Docs** in `docs/features/*`. Then `pnpm lint`, `pnpm build` and `pnpm check:copy`, and commit.
+- [x] `claimId` is passed in `usePaperDownload.js`. The one record call covers all three paths: save to device, Send to my Telegram, and the Mini App file.
+- [x] `DownloadsPage.jsx`: each row is dated by its latest download (`lastDownloadedAt`), and the comment is updated. Showing `downloadCount` is left for the canvas (hard rule 16).
+- [x] **Docs:** `docs/features/paper-download.md` and `exams-downloads-profile.md`. `lint` (two warnings that were already there), `check:copy` and `build` all pass.
+- [x] **Commit**, approved by the owner.
 
-**Exit**, checked on the prod-parity stack (127.0.0.1:8080 admin, :8081 learner):
+**Exit**, checked on the prod-parity stack:
 
-- **Repeat downloads:** one user downloads the same published paper three times (print, phone, key only). That gives one code, `downloadCount` 2 and `modeCounts.key` 1.
-- **Lookup:** the lookup finds that code. After the migration, it also finds an old code that was folded in as an alias.
-- **Republish:** republishing a reopened original exam paper gives a new code on the next download.
-- **Retry:** a forced retry of record does not double count.
-- **Dashboard:** its totals match the counter sums.
+- [x] **Probe:** `probe:download-traces` passed **15 of 15**.
+  - One code for repeat downloads by staff and by a learner.
+  - The counts are right: `downloadCount` +1 for both, `modeCounts.key` +1 with no download counted for the answer key alone, and a retry is a no-op.
+  - The lookup works.
+  - The summary is +2 downloads and +1 answer key.
+  - A republished original exam paper gives a new code.
+  - The learner's list shows the paper once.
+- [x] After the fold script and backfill were removed: the plain unique index builds, and the probe passes again.
+- [x] **Isolation check:** `check-organization-isolation` passed 336 of 336.
+- [x] **Browser walk** (Playwright as superadmin): 6 of 6.
+  - The row download sends the claim token; two claims gave one code; the answer key landed on the same copy without counting.
+  - Download history shows the new columns, and Overview shows Copies.
+  - The list total and `totals.copies` agree (18 and 18).
 
 ## Phase 3: Integrations > Telegram in the main menu
 
