@@ -1,6 +1,6 @@
 # Testing fixes, November 2026
 
-**Status:** Phase 0 complete. Phases 1 to 4 not started. **Next: Phase 1.**
+**Status:** Phases 0 and 1 complete (Phase 1's check on prep is owed by the owner). Phases 2 to 4 not started. **Next: Phase 4**, then 3, then 2.
 
 **Owner repos:** `qbank-api` (Phases 1 and 2), `qbank-admin` (Phases 2, 3 and 4), `qbank-learner` (Phase 2), `qbank-deploy` (Phase 1, only if the cause is operational) and this root repo (this file, plus `INTEGRATION.md` in Phases 2 and 3).
 
@@ -58,29 +58,30 @@ Testing on 2026-11-14 turned up four issues. Each is its own phase, numbered as 
   - A `/start` can land on the API whose database does not hold the code. The retry then lands on the right one.
 - **H1: a stale picker.** A "Choose a channel" reply keyboard from an earlier attempt, or a repeat redeem that rotates `requestId`, sends a `request_id` that no longer matches. The "expired" reply also removes the keyboard, which is why the retry works.
 
+**Result (2026-11-14): H2, confirmed.** The prod database cannot be read from here, so the failed row was not looked at. The local stack showed the cause directly instead: its API was polling the same bot as prep, with 106 `409` conflicts in six hours (the last at 15:15 UTC, minutes before the check), and no link codes or channels of its own since 2026-11-11. So a `/start` that reached the local API looked for prep's code in the local database and was answered "expired", and the retry happened to reach prep. H1 was not seen, but it is real in the code and is hardened anyway.
+
 **Tasks:**
 
-- [ ] **Diagnose first.** Find the `TelegramLinkCode` row for a failed first link (latest `createdAt` for that `createdBy`).
-  - `telegramUserId` and `requestId` set → H1.
-  - Unset → H2. Also check the API logs for "another process is polling this bot".
-  - Record the result here.
-- [ ] **Hardening (lands either way)**, in `telegram-channels.service.ts`:
+- [x] **Diagnose first.** The result is recorded above.
+- [x] **Hardening (lands either way)**, in `qbank-api/src/telegram/`:
   - `tryRedeemLinkCode` keeps the existing `requestId` when the same sender redeems the same code again.
-  - On a `request_id` mismatch, `onChatShared` falls back to the sender's newest valid, unconsumed code and resends its picker, instead of replying "expired".
-  - Both "expired" branches (here and in the router) log which branch fired, without the code.
-- [ ] **If H2:**
-  - Stop the local stack polling the shared bot. Leave the token blank in `qbank-deploy/.env` by default, or document a separate dev bot.
-  - Make the API's 409-conflict log loud.
-  - Update `qbank-deploy/README.md`.
-- [ ] **Docs:**
-  - `qbank-api/doc/roadmaps/telegram-integration.md` (the real-Telegram picker check owed in Phase 1)
-  - `qbank-admin/docs/features/telegram.md` step 2 copy, if it changes
-- [ ] **Commit** in `qbank-api`, plus `qbank-deploy` if H2.
+  - On a `request_id` mismatch, `onChatShared` matches the sender's newest open code and connects with it. That is safe because every picker asks for the same rights and the sender redeemed that code themselves. It answers "expired" only when there is no open code.
+  - Both "expired" branches (`onChatShared` and the router's `/start` fallback) log which one fired, never the code.
+- [x] **H2:**
+  - `qbank-deploy/compose.local.yml` passes `TELEGRAM_UPDATES_ENABLED` (default `true`), and the local `.env` sets it to `false` while it shares prep's bot. The local API now logs "Telegram updates are off".
+  - `telegram-updates.service.ts` logs the `409` as an error that says what it breaks and how to fix it.
+  - `qbank-deploy/README.md` (the local stack's Telegram note) is updated.
+- [x] **Docs:**
+  - `qbank-api/doc/02-modules.md` (the update loop and the linking steps)
+  - `qbank-api/doc/03-data-model.md` (`requestId`)
+  - `qbank-api/doc/roadmaps/telegram-integration.md` (a dated note under Phase 1)
+  - `qbank-admin/docs/features/telegram.md` needed nothing: the admin's copy did not change.
+- [x] **Commit** in `qbank-api` and `qbank-deploy`.
 
 **Exit:**
 
-- On prep, with the local stack running or stopped, a fresh "Connect a channel" link connects on the first try.
-- `qbank-api/src/scripts/probe-telegram-bot-chat.ts` covers the repeat-redeem and stale `request_id` cases.
+- [x] `pnpm run probe:telegram-bot-chat` (the stand-in bot, on the Docker stack) covers the repeat-redeem and stale `request_id` cases: **23 of 23 passed**.
+- [ ] **Owed by the owner, on prep:** a fresh "Connect a channel" link connects on the first try. The local stack no longer polls, so this should hold before the API change is deployed. The hardening reaches prep with the next API deploy.
 
 ## Phase 2: one trace code per paper per user
 
