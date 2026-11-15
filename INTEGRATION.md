@@ -387,7 +387,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Post templates and two buttons (0072)
 
-**Status: decision accepted 2026-11-15, and revised the same day to a template library. Phase 1 is built in the API (2026-11-15): the template engine, the built-in template and the two buttons, which every post now carries. The library and choosing a template when posting come in Phases 3 to 6.** Roadmap: [qbank-api/doc/roadmaps/telegram-post-templates.md](qbank-api/doc/roadmaps/telegram-post-templates.md). The API owns Phases 1, 3 and 4; the admin owns Phases 5 and 6.
+**Status: decision accepted 2026-11-15, and revised the same day to a template library. Phase 1 is built in the API (2026-11-15): the template engine, the built-in template and the two buttons, which every post now carries. Phase 3 is built in the API (2026-11-15): the library routes, `/telegram/templates*`. Phase 4 is built in the API (2026-11-15): `templateId` on the post routes, `defaultTemplateId` on the channel, and the template on the post row, so the API side is complete. The admin comes in Phases 5 and 6; its handoff is [qbank-api/doc/handover/telegram-post-templates-frontend-prompt.md](qbank-api/doc/handover/telegram-post-templates-frontend-prompt.md).** Roadmap: [qbank-api/doc/roadmaps/telegram-post-templates.md](qbank-api/doc/roadmaps/telegram-post-templates.md). The API owns Phases 1, 3 and 4; the admin owns Phases 5 and 6.
 
 - **What changes: a template library, and a post picks from it.**
   - **Provided templates** are owned by the System organization. Only a superadmin writes them, and every organization can use them straight away.
@@ -410,7 +410,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
   | `PATCH /telegram/templates/:id`, `DELETE /telegram/templates/:id` | Change or delete a template the caller may write. |
   | `POST /telegram/templates/:id/copy` | Copies a template into the caller's own list. |
   | `POST /telegram/templates/preview` | Renders a template without sending: `{ text, entities, buttons, problems, captionTooLong }`. |
-  | `PATCH /telegram/channels/:id` | Takes `defaultTemplateId` (`null` clears it). Channel rows return `defaultTemplate { id, name }`. |
+  | `PATCH /telegram/channels/:id` | Takes `defaultTemplateId` (`null` or `standard` clears it) beside `notifyLeads`, either or both. Channel rows return `defaultTemplate { id, name }`, Standard when none was chosen or the chosen one is gone. |
   | `POST /telegram/posts` and `/telegram/posts/document` | Take an optional `templateId`, never template text. Post rows return `templateId` and `templateName`. |
 - **Enum and permission seams: nothing.** No new enum and no new permission. Writing a provided template is decided by the superadmin role, not by a permission.
 - **Copy seam.** Admin: `Post templates`, `Provided`, `Your templates`, `Make a copy`, `Default template`, `View in App` and `View in Web` (the default labels). API: `Unknown placeholder {{x}}. Choose one from the list.` No em dashes.
