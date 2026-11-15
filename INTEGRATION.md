@@ -416,6 +416,36 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **Copy seam.** Admin: `Post templates`, `Provided`, `Your templates`, `Make a copy`, `Default template`, `View in App` and `View in Web` (the default labels). API: `Unknown placeholder {{x}}. Choose one from the list.` No em dashes.
 - **Not built: custom (premium) emoji.** In a channel, Telegram allows them only to a bot that owns a username bought on Fragment.
 - **Deploy order.** The API first (Phase 1 changes the buttons on its own; the routes in Phases 3 and 4 are additive, and a post without `templateId` behaves as before), then the admin.
+- **Amended by 0073** (below). Until each of its phases lands, this subsection is the contract in force.
+
+### Post templates, revision 2 (0073)
+
+**Status: decision accepted 2026-11-15; Phase 0 (this contract, the decision and the roadmap) done. Nothing is built, so the 0072 subsection above is still the live contract.** Decision [0073](qbank-api/doc/decisions/0073-telegram-post-templates-per-kind-and-placeholders.md); roadmap [qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md](qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md). The API owns Phases 1, 2, 4 and 5; the admin owns Phases 1, 3, 4, 6 and 7. Each phase is committed only on the owner's approval.
+
+- **Fixed buttons (Phase 1).** View in App and View in Web keep those labels on every post. `appButtonLabel` and `webButtonLabel` leave the template row, its requests and the preview request.
+- **A template has a kind (Phases 2 and 3).** The kind is `link`, `pdf` or `quiz`, set on create and never changed (a copy keeps it). It is a new enum, `telegramTemplateKind`, on `GET /api/config` and mirrored in the admin's `src/lib/enums.js` (`pnpm check:drift`).
+  - A post may use only a template of its own kind; another kind's answers 400.
+  - `{{quiz_line}}` belongs to quiz templates only.
+  - A saved template's preview takes its kind from the template.
+- **A channel choice per kind (Phases 2 and 3).** `PATCH /telegram/channels/:id` takes `{ defaultTemplates: { link?, pdf?, quiz? } }` (each an id or `null`) in place of `defaultTemplateId`. Channel rows return `defaultTemplates: { link: {id,name}, pdf: {...}, quiz: {...} }`. A post uses the request's `templateId`, else the channel's choice for its kind, else that kind's Default.
+- **Default (Phase 4).** The built-in template is renamed from Standard to **Default**, id `default` in place of `standard`, one per kind.
+  - The superadmin edits a kind's Default with `PATCH /telegram/templates/default?kind=`, and `POST /telegram/templates/default/restore?kind=` brings back the original.
+  - Anyone else gets a 404 from both.
+  - The list marks an edited Default with `edited: true`.
+- **Placeholders (Phases 5 and 6).** New routes, all `telegram:manage`:
+  - `GET /telegram/placeholders` lists the caller's usable set, with descriptions and switch states.
+  - `POST`, `PATCH /:id` and `DELETE /:id` write the system's placeholders (superadmin) or an organization's own.
+  - `PATCH /telegram/placeholders/built-in/:name` takes `{ enabled }` (superadmin only; `licence` is refused).
+
+  The rules:
+  - **Core names** (`paper_name`, `paper_code`, `exam_date`, `level`, `level_tag`, `questions`, `channel`, `channel_title`, `organization`, `link`, `note`, `licence`) are refused as names for anyone.
+  - `heading`, `quiz_line` and `call_to_action` may be overridden.
+  - **A token's value** is the organization's own, else the system's, else the built-in.
+  - A value is text or an `https` link, and may differ per kind.
+  - The superadmin never reads an organization's own placeholders.
+  - The template list's `placeholders` field comes from the registry. **The admin's chips and suggestions read the API's list, never a copy.**
+- **Copy seam.** Admin: `Default`, `Restore original`, `Template for a link` / `for a PDF` / `for a quiz`, `Placeholders`, `Reserved`, `Override`, `Different for each kind`. API messages follow the no-em-dash rule.
+- **Deploy order.** The shapes change (labels removed, `defaultTemplates`, `default`), so the API and the admin deploy together, API first. No migration: the database is rebuilt.
 
 ### Mini App sign-in (0064)
 
