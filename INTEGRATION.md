@@ -385,6 +385,38 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **One-time codes do not change.** SMS codes stay with Message Central (0030, 0033). Telegram Gateway is a non-goal.
 - **Deploy order.** The API first (additive; inert without a token), then the admin, then the homepage's rules line; the learner after Phase 7. **No server key is needed for any of these deploys to work:** `TELEGRAM_BOT_TOKEN` is commented out in `qbank-deploy/.env.example`, so `deploy.sh`'s key check does not ask for it, and `LEARNER_APP_URL` is derived from `LEARNER_HOST` in `compose.prod.yml`. Telegram stays off until the token is added by hand (`qbank-deploy/README.md`, "Switch Telegram on").
 
+### Post templates and two buttons (0072)
+
+**Status: decision accepted 2026-11-15, and revised the same day to a template library. Phase 1 is built in the API (2026-11-15): the template engine, the built-in template and the two buttons, which every post now carries. The library and choosing a template when posting come in Phases 3 to 6.** Roadmap: [qbank-api/doc/roadmaps/telegram-post-templates.md](qbank-api/doc/roadmaps/telegram-post-templates.md). The API owns Phases 1, 3 and 4; the admin owns Phases 5 and 6.
+
+- **What changes: a template library, and a post picks from it.**
+  - **Provided templates** are owned by the System organization. Only a superadmin writes them, and every organization can use them straight away.
+  - **Standard** (the built-in template, fixed id `standard`, the old post exactly) is always first among them, and cannot be edited or deleted.
+  - **An organization's own templates** are private to it, written by staff with `telegram:manage`.
+  - **Make a copy** turns any readable template into one of your own. Nobody edits another organization's template or a provided one, as with the shared question bank (0034, D5 and D15).
+  - **Posting only picks.** A post uses the template chosen in the dialog, else the channel's default, else Standard. A deleted default falls back to Standard quietly. The optional note stays and fills `{{note}}`.
+- **Template format.** One template serves the link message, the PDF caption and the quiz intro.
+  - It is plain text with `{{placeholders}}` and WhatsApp-style `*bold*`, `_italic_` and `~strike~`.
+  - The API turns the markers into Telegram entities and inserts every placeholder value as plain text, so a paper's name can never format a post.
+  - Licence attribution lines are always in the post.
+- **Placeholders are a shared vocabulary.** The set is `heading`, `paper_name`, `paper_code`, `exam_date`, `level`, `level_tag`, `questions`, `quiz_line`, `note`, `channel` (`@username`, or the title for a private channel), `channel_title`, `organization`, `call_to_action` (the sentence that is the link), `link` and `licence` (where the licence lines go; they are added at the end if it is left out). The API owns the list (`PLACEHOLDERS` in `qbank-api/src/telegram/helpers/telegram-post-template.ts`, from Phase 1) and refuses an unknown name on save. The admin's insert chips show the same list. **Add a placeholder on both sides or neither.**
+- **Buttons.** One row with **View in App** (`https://t.me/<bot>?startapp=p_<paperId>_<ref>`, shown only with `TELEGRAM_MINI_APP_ENABLED`) and **View in Web** (the learner URL, shown only when Telegram accepts the address). This replaces the single "Open the paper" button on every new post. A channel cannot carry a `web_app` button, so the app button is a URL button. Both carry the share token, so credit is unchanged. Each template carries its own labels.
+- **Endpoint seam (Phases 3 and 4).** All routes are `telegram:manage`, and another organization's id answers 404.
+
+  | Route | Does |
+  |---|---|
+  | `GET /telegram/templates` | Standard, then the provided templates, then the caller's own. Rows are `{ id, name, text, appButtonLabel, webButtonLabel, provided, builtIn, canEdit, copiedFromId?, updatedAt? }`, and the response also carries `placeholders`. |
+  | `POST /telegram/templates` | Creates a template. A superadmin's is a provided one. |
+  | `PATCH /telegram/templates/:id`, `DELETE /telegram/templates/:id` | Change or delete a template the caller may write. |
+  | `POST /telegram/templates/:id/copy` | Copies a template into the caller's own list. |
+  | `POST /telegram/templates/preview` | Renders a template without sending: `{ text, entities, buttons, problems, captionTooLong }`. |
+  | `PATCH /telegram/channels/:id` | Takes `defaultTemplateId` (`null` clears it). Channel rows return `defaultTemplate { id, name }`. |
+  | `POST /telegram/posts` and `/telegram/posts/document` | Take an optional `templateId`, never template text. Post rows return `templateId` and `templateName`. |
+- **Enum and permission seams: nothing.** No new enum and no new permission. Writing a provided template is decided by the superadmin role, not by a permission.
+- **Copy seam.** Admin: `Post templates`, `Provided`, `Your templates`, `Make a copy`, `Default template`, `View in App` and `View in Web` (the default labels). API: `Unknown placeholder {{x}}. Choose one from the list.` No em dashes.
+- **Not built: custom (premium) emoji.** In a channel, Telegram allows them only to a bot that owns a username bought on Fragment.
+- **Deploy order.** The API first (Phase 1 changes the buttons on its own; the routes in Phases 3 and 4 are additive, and a post without `templateId` behaves as before), then the admin.
+
 ### Mini App sign-in (0064)
 
 **Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack against a stand-in bot; a phone check with the real bot is owed.** Phase 4 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0064](qbank-api/doc/decisions/0064-telegram-mini-app-sign-in.md).
@@ -407,7 +439,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **The learner app now writes that grammar too** (learner roadmap Phase 15). Sharing a paper from inside Telegram builds `https://t.me/<bot>?startapp=p_<paperId>[_<ref>]` from the `botUrl` on `GET /papers/me/telegram` (`paperStartParam` in `qbank-learner/src/lib/share.js`). So there are three writers of one grammar: the API's posts, the bot's own buttons and the learner app's Share. `pnpm check:telegram` in the learner holds its writer and its reader together; a change of the grammar is still both repos or neither. A shared link is only as good as the bot's Main Mini App: where that is not set in BotFather, `startapp` opens the bot's chat, not the paper.
 - **What the learner app does with it.** Before React renders, a launch whose `start_param` names a paper has its address moved to `/papers/<paperId>?ref=<ref>`, exactly what a share link opens. Everything after that (the sign-in detour, the consent question, the download's credit) reads `?ref=` as it always has, so a post opened inside Telegram is counted on the same share link as one opened in a browser. Once per launch; a reload does not put the learner back on the paper.
 - **What the bot does.** A learner who writes to the bot gets a welcome and a button into the app; `/start p_<paperId>[_<ref>]` gets a button to that paper. A staff member's one-time channel code is still tried first, so connecting a channel is unchanged. `/help` carries the channel instructions.
-- **One server key, off by default: `TELEGRAM_MINI_APP_ENABLED`.** Off, every button the bot sends is an ordinary link and a post is what it was. On, the bot's own buttons and its menu button open the learner app in place, and the button under a channel post leads to `https://t.me/<bot>?startapp=p_<paperId>_<ref>`. The web address stays in the post's text either way. It needs a public https learner address and **the bot's Main Mini App set to that address in BotFather**; a `startapp` link to a bot without one opens nothing. Runbook: `qbank-deploy/README.md`, "Open the app inside Telegram".
+- **One server key, off by default: `TELEGRAM_MINI_APP_ENABLED`.** Off, every button the bot sends is an ordinary link and a post is what it was. On, the bot's own buttons and its menu button open the learner app in place, and a channel post carries a View in App button to `https://t.me/<bot>?startapp=p_<paperId>_<ref>` beside View in Web (0072, since 2026-11-15; before that it was the post's one button). The web address stays in the post's text either way. It needs a public https learner address and **the bot's Main Mini App set to that address in BotFather**; a `startapp` link to a bot without one opens nothing. Runbook: `qbank-deploy/README.md`, "Open the app inside Telegram".
 - **Enum, permission and endpoint seams: nothing.** No route was added or changed. The admin's Post to Telegram dialog is untouched: where the button leads is decided on the server.
 - **Copy seam.** Bot, to a learner: `Open QFoundry`, `Open the paper`, the welcome line and "Here is your question paper..." (`qbank-api/src/telegram/telegram-messages.ts`). Commands: `/start` (Open QFoundry), `/help` (Connect a channel (for institutes)).
 - **Deploy order.** Either first. An older learner build ignores a start parameter and opens on Home; an older API never sends one. Switch the key on only when both are deployed and BotFather is set.
