@@ -391,10 +391,10 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 - **What changes: a template library, and a post picks from it.**
   - **Provided templates** are owned by the System organization. Only a superadmin writes them, and every organization can use them straight away.
-  - **Standard** (the built-in template, fixed id `standard`, the old post exactly) is always first among them, and cannot be edited or deleted.
+  - **Default** (the built-in template, fixed id `default`, the old post exactly) is always first among them, and cannot be edited or deleted.
   - **An organization's own templates** are private to it, written by staff with `telegram:manage`.
   - **Make a copy** turns any readable template into one of your own. Nobody edits another organization's template or a provided one, as with the shared question bank (0034, D5 and D15).
-  - **Posting only picks.** A post uses the template chosen in the dialog, else the channel's default, else Standard. A deleted default falls back to Standard quietly. The optional note stays and fills `{{note}}`.
+  - **Posting only picks.** A post uses the template chosen in the dialog, else the channel's default, else Default. A deleted default falls back to Default quietly. The optional note stays and fills `{{note}}`.
 - **Template format.** One template serves the link message, the PDF caption and the quiz intro.
   - It is plain text with `{{placeholders}}` and WhatsApp-style `*bold*`, `_italic_` and `~strike~`.
   - The API turns the markers into Telegram entities and inserts every placeholder value as plain text, so a paper's name can never format a post.
@@ -405,12 +405,12 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
   | Route | Does |
   |---|---|
-  | `GET /telegram/templates` | Standard, then the provided templates, then the caller's own. Rows are `{ id, name, text, provided, builtIn, canEdit, copiedFromId?, updatedAt? }`, and the response also carries `placeholders`. |
+  | `GET /telegram/templates` | Default, then the provided templates, then the caller's own. Rows are `{ id, name, text, provided, builtIn, canEdit, copiedFromId?, updatedAt? }`, and the response also carries `placeholders`. |
   | `POST /telegram/templates` | Creates a template. A superadmin's is a provided one. |
   | `PATCH /telegram/templates/:id`, `DELETE /telegram/templates/:id` | Change or delete a template the caller may write. |
   | `POST /telegram/templates/:id/copy` | Copies a template into the caller's own list. |
   | `POST /telegram/templates/preview` | Renders a template without sending: `{ text, entities, buttons, problems, captionTooLong }`. The post dialog adds `mode`/`profile` (a PDF) or `quizCount` (a quiz) so its preview is the post, share code aside. |
-  | `PATCH /telegram/channels/:id` | Takes `defaultTemplateId` (`null` or `standard` clears it) beside `notifyLeads`, either or both. Channel rows return `defaultTemplate { id, name }`, Standard when none was chosen or the chosen one is gone. |
+  | `PATCH /telegram/channels/:id` | Takes `defaultTemplateId` (`null` or `default` clears it) beside `notifyLeads`, either or both. Channel rows return `defaultTemplate { id, name }`, Default when none was chosen or the chosen one is gone. |
   | `POST /telegram/posts` and `/telegram/posts/document` | Take an optional `templateId`, never template text. Post rows return `templateId` and `templateName`. |
 - **Enum and permission seams: nothing.** No new enum and no new permission. Writing a provided template is decided by the superadmin role, not by a permission.
 - **Copy seam.** Admin: `Post templates`, `Provided`, `Your templates`, `Make a copy`, `Default template`, `View in App` and `View in Web` (the default labels). API: `Unknown placeholder {{x}}. Choose one from the list.` No em dashes.
@@ -420,7 +420,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Post templates, revision 2 (0073)
 
-**Status: decision accepted 2026-11-15; Phase 0 (this contract, the decision and the roadmap) done; Phase 1 (fixed buttons) built in the API and the admin, and folded into the 0072 subsection above. Phase 2 (a template has a kind) built in the API and Phase 3 in the admin (2026-11-15), so both sides speak the shapes below again. Deploy them together, API first. The 0072 subsection above stays the contract for whatever is not yet built.** Decision [0073](qbank-api/doc/decisions/0073-telegram-post-templates-per-kind-and-placeholders.md); roadmap [qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md](qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md). The API owns Phases 1, 2, 4 and 5; the admin owns Phases 1, 3, 4, 6 and 7. Each phase is committed only on the owner's approval.
+**Status: decision accepted 2026-11-15; Phase 0 (this contract, the decision and the roadmap) done; Phase 1 (fixed buttons) built in the API and the admin, and folded into the 0072 subsection above. Phase 2 (a template has a kind) built in the API and Phase 3 in the admin (2026-11-15), so both sides speak the shapes below again. Phase 4 (Standard renamed Default, editable by the superadmin) built in both (2026-11-15). Deploy them together, API first. The 0072 subsection above stays the contract for whatever is not yet built.** Decision [0073](qbank-api/doc/decisions/0073-telegram-post-templates-per-kind-and-placeholders.md); roadmap [qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md](qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md). The API owns Phases 1, 2, 4 and 5; the admin owns Phases 1, 3, 4, 6 and 7. Each phase is committed only on the owner's approval.
 
 - **Fixed buttons (Phase 1, built).** View in App and View in Web keep those labels on every post. `appButtonLabel` and `webButtonLabel` leave the template row, its requests and the preview request.
 - **A template has a kind (Phases 2 and 3; built).** The template list's `placeholders` carry `onlyIn` (`quiz` for `quiz_line`), so the admin offers a placeholder only where it belongs. The kind is `link`, `pdf` or `quiz`, set on create and never changed (a copy keeps it). It is a new enum, `telegramTemplateKind`, on `GET /api/config` and mirrored in the admin's `src/lib/enums.js` (`pnpm check:drift`).
@@ -428,7 +428,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
   - `{{quiz_line}}` belongs to quiz templates only.
   - A saved template's preview takes its kind from the template.
 - **A channel choice per kind (Phases 2 and 3; built).** `PATCH /telegram/channels/:id` takes `{ defaultTemplates: { link?, pdf?, quiz? } }` (each an id or `null`) in place of `defaultTemplateId`. Channel rows return `defaultTemplates: { link: {id,name}, pdf: {...}, quiz: {...} }`. A post uses the request's `templateId`, else the channel's choice for its kind, else that kind's Default.
-- **Default (Phase 4).** The built-in template is renamed from Standard to **Default**, id `default` in place of `standard`, one per kind.
+- **Default (Phase 4, built).** The built-in template is renamed from Default to **Default**, id `default` in place of `default`, one per kind.
   - The superadmin edits a kind's Default with `PATCH /telegram/templates/default?kind=`, and `POST /telegram/templates/default/restore?kind=` brings back the original.
   - Anyone else gets a 404 from both.
   - The list marks an edited Default with `edited: true`.
