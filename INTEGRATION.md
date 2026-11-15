@@ -400,12 +400,12 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
   - The API turns the markers into Telegram entities and inserts every placeholder value as plain text, so a paper's name can never format a post.
   - Licence attribution lines are always in the post.
 - **Placeholders are a shared vocabulary.** The set is `heading`, `paper_name`, `paper_code`, `exam_date`, `level`, `level_tag`, `questions`, `quiz_line`, `note`, `channel` (`@username`, or the title for a private channel), `channel_title`, `organization`, `call_to_action` (the sentence that is the link), `link` and `licence` (where the licence lines go; they are added at the end if it is left out). The API owns the list (`PLACEHOLDERS` in `qbank-api/src/telegram/helpers/telegram-post-template.ts`, from Phase 1) and refuses an unknown name on save. The admin's insert chips show the same list. **Add a placeholder on both sides or neither.**
-- **Buttons.** One row with **View in App** (`https://t.me/<bot>?startapp=p_<paperId>_<ref>`, shown only with `TELEGRAM_MINI_APP_ENABLED`) and **View in Web** (the learner URL, shown only when Telegram accepts the address). This replaces the single "Open the paper" button on every new post. A channel cannot carry a `web_app` button, so the app button is a URL button. Both carry the share token, so credit is unchanged. Each template carries its own labels.
+- **Buttons.** One row with **View in App** (`https://t.me/<bot>?startapp=p_<paperId>_<ref>`, shown only with `TELEGRAM_MINI_APP_ENABLED`) and **View in Web** (the learner URL, shown only when Telegram accepts the address). This replaces the single "Open the paper" button on every new post. A channel cannot carry a `web_app` button, so the app button is a URL button. Both carry the share token, so credit is unchanged. The labels are fixed: a template has none of its own (0073, R1, since revision 2's Phase 1).
 - **Endpoint seam (Phases 3 and 4).** All routes are `telegram:manage`, and another organization's id answers 404.
 
   | Route | Does |
   |---|---|
-  | `GET /telegram/templates` | Standard, then the provided templates, then the caller's own. Rows are `{ id, name, text, appButtonLabel, webButtonLabel, provided, builtIn, canEdit, copiedFromId?, updatedAt? }`, and the response also carries `placeholders`. |
+  | `GET /telegram/templates` | Standard, then the provided templates, then the caller's own. Rows are `{ id, name, text, provided, builtIn, canEdit, copiedFromId?, updatedAt? }`, and the response also carries `placeholders`. |
   | `POST /telegram/templates` | Creates a template. A superadmin's is a provided one. |
   | `PATCH /telegram/templates/:id`, `DELETE /telegram/templates/:id` | Change or delete a template the caller may write. |
   | `POST /telegram/templates/:id/copy` | Copies a template into the caller's own list. |
@@ -420,9 +420,9 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Post templates, revision 2 (0073)
 
-**Status: decision accepted 2026-11-15; Phase 0 (this contract, the decision and the roadmap) done. Nothing is built, so the 0072 subsection above is still the live contract.** Decision [0073](qbank-api/doc/decisions/0073-telegram-post-templates-per-kind-and-placeholders.md); roadmap [qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md](qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md). The API owns Phases 1, 2, 4 and 5; the admin owns Phases 1, 3, 4, 6 and 7. Each phase is committed only on the owner's approval.
+**Status: decision accepted 2026-11-15; Phase 0 (this contract, the decision and the roadmap) done; Phase 1 (fixed buttons) built in the API and the admin, and folded into the 0072 subsection above, which stays the live contract for everything not yet built.** Decision [0073](qbank-api/doc/decisions/0073-telegram-post-templates-per-kind-and-placeholders.md); roadmap [qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md](qbank-api/doc/roadmaps/telegram-post-templates-revision-2.md). The API owns Phases 1, 2, 4 and 5; the admin owns Phases 1, 3, 4, 6 and 7. Each phase is committed only on the owner's approval.
 
-- **Fixed buttons (Phase 1).** View in App and View in Web keep those labels on every post. `appButtonLabel` and `webButtonLabel` leave the template row, its requests and the preview request.
+- **Fixed buttons (Phase 1, built).** View in App and View in Web keep those labels on every post. `appButtonLabel` and `webButtonLabel` leave the template row, its requests and the preview request.
 - **A template has a kind (Phases 2 and 3).** The kind is `link`, `pdf` or `quiz`, set on create and never changed (a copy keeps it). It is a new enum, `telegramTemplateKind`, on `GET /api/config` and mirrored in the admin's `src/lib/enums.js` (`pnpm check:drift`).
   - A post may use only a template of its own kind; another kind's answers 400.
   - `{{quiz_line}}` belongs to quiz templates only.
