@@ -488,6 +488,28 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **The learner's level is kept on the device**, not on the account: no API field. A learner on a second phone is asked again.
 - **Deploy order.** The API first: an older learner build keeps calling `published`, which is unchanged. A newer learner build against an older API would get a 404 for the catalogue and show its "Failed to load exam papers" state.
 
+## Feature flags contract (0074)
+
+**Status: decided, nothing built (2026-11-16).** Roadmap [qbank-api/doc/roadmaps/feature-flags.md](qbank-api/doc/roadmaps/feature-flags.md), decision [0074](qbank-api/doc/decisions/0074-feature-flags.md). Phases 1 to 4 build the plumbing in the API, the admin, the learner and the writer; Phase 5 puts the first real features behind flags.
+
+- **What it is.** A platform-wide on/off switch per feature, no A/B, no per-organization value. The registry is code in the API, `src/common/feature-flags.ts` (key, label, description, default, which apps read it); the overrides are one global `app_settings` row. The API evaluates in memory through the OpenFeature NestJS SDK; each SPA reads every flag through the OpenFeature React SDK and the stock OFREP web provider, polling once a minute. The superadmin flips a flag on Settings > Feature flags in the admin.
+- **The one rule.** **A flag never gates data access.** It decides whether a feature is offered; roles and permissions decide who may read or do what. The flags endpoint is public, so a flag's name and value are visible to anyone, including a learner who is not signed in. Anything that must stay unseen goes behind a permission, whose registry is not public.
+- **Endpoint seam.** `POST /api/ofrep/v1/evaluate/flags` (public, `Cache-Control: no-store`, `ETag`, `304` on `If-None-Match`; body `{ context? }` is accepted and ignored) → `{ flags: [{ key, value, reason: "STATIC", variant: "on" | "off" }] }`, every registered flag. Management, all `@Roles(superadmin)`: `GET /api/feature-flags` → `[{ key, label, description, apps, defaultValue, enabled, overridden }]`; `PUT /api/feature-flags/:key` `{ enabled }` and `DELETE /api/feature-flags/:key` (clear the override), both answering the full list. A route behind a flag that is off answers `404` with `This feature is not switched on.`; the guards run first, so an unauthenticated caller still gets `401`.
+- **The flag seam (a fifth mirror, like enums).** Each SPA keeps a `FLAGS` object in `src/lib/featureFlags.js` with the keys it reads, and its `check:drift` compares that to the public OFREP answer. Permissions and enums are unchanged by a flag.
+- **Propagation.** The API's own view refreshes every 30 seconds and at once after a write; a tab follows within 60 seconds, or on becoming visible again. One API container is assumed.
+- **Fallbacks.** The second argument of every flag read in a SPA, and the `defaultValue` in the registry, is the safe value: `true` for a kill switch on a live feature, `false` for one not yet released. An API outage must never hide a shipped feature or show an unreleased one.
+- **Copy seam.** Admin: `Feature flags`, `Apps follow within about a minute.`, `Overridden`, `Reset to default`. API: `This feature is not switched on.`, `Unknown feature flag.` No em dashes.
+- **Deploy order.** The API first, always: an older SPA ignores the endpoint; a newer SPA against an older API gets a 404 from the provider and falls back to the call-site values, which is the designed behaviour, not an error.
+
+### Before putting a feature behind a flag
+
+1. Is it a platform-wide switch? A per-customer capability is an entitlement on the organization, not a flag. A question of who may act is a permission, not a flag.
+2. Add the registry entry in the API (`kebab-case`, noun first: `telegram-integration`, `learner-maintenance`), with the `apps` that read it and a `defaultValue` that is the shipped state.
+3. Gate the API routes with `@RequireFeature(key)` beside, never instead of, their `@RequirePermissions` or `@Roles`.
+4. Add the key to `FLAGS` in every SPA that reads it, and gate the route, the menu item or the component with a fallback chosen per rule D7. Hide only what the API would refuse.
+5. Run `check:drift` in each touched SPA and `probe:feature-flags` in the API.
+6. To remove a feature: delete the flag's registry entry together with the code behind it, in the API first. A stale override in the row is ignored.
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
