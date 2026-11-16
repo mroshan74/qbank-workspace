@@ -21,6 +21,9 @@
 		},
 		{
 			"path": "qbank-homepage"
+		},
+		{
+			"path": "qbank-monitoring"
 		}
 	],
 	"settings": {

@@ -510,6 +510,29 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 5. Run `check:drift` in each touched SPA and `probe:feature-flags` in the API.
 6. To remove a feature: delete the flag's registry entry together with the code behind it, in the API first. A stale override in the row is ignored.
 
+## Monitoring contract (0075)
+
+**Status: decided, nothing built (Phase 0, 2026-11-16).** Roadmap [qbank-api/doc/roadmaps/monitoring-and-error-telemetry.md](qbank-api/doc/roadmaps/monitoring-and-error-telemetry.md), decision [0075](qbank-api/doc/decisions/0075-monitoring-and-error-telemetry.md), API note [doc/11](qbank-api/doc/11-monitoring-and-alerts.md). The seams below are the target; each is marked with the phase that builds it, and this section's status line is updated in that phase.
+
+- **What it is.** A watchdog inside the API that counts errors and bottlenecks and messages the owner's Telegram through a separate ops bot (Phase 2). Error capture in the three SPAs, sent to up to three places (Phases 3 and 5). A monitoring stack in its own repo, `qbank-monitoring` (compose, one script, runbooks; no application code), that runs on its own VPS, which comes and goes, and in a small form on the owner's PC (Phases 4, 6 and 7). It is deliberately not in `qbank-deploy`, which pulls itself on every app deploy. `qbank-homepage` is not part of it.
+- **The one rule.** **The app side never waits for the monitoring side.** A missing VPS, a dead collector address or an unset key must never fail a request, slow a page, block a container or fail a deploy. No deploy script and no required `.env` key changes; the app containers keep Docker's `json-file` log driver; every agent is capped and drops instead of queueing; the SPA reporter sends in the background, never retries, and stops after 10 events a session.
+- **The flag seam (Phase 3).** Three flags in the API's registry, mirrored in each SPA's `FLAGS`, each one a destination: `error-reporting-api` (the API, then Telegram; ships on), `error-reporting-self-hosted` (Bugsink on the monitoring VPS; ships off), `error-reporting-cloud` (Sentry's free plan; ships off). Any combination; all three off is the off switch. **The call-site fallback is `false` for all three**: an app that cannot read the flags sends nothing. This is the one place the kill-switch rule of the flags contract does not apply, because the safe value of a reporter is silence.
+- **Endpoint seam (Phase 3).** `POST /api/ops/client-errors`, public, behind `error-reporting-api` (off answers the flags' `404`), throttled per IP, origin must be one of `CLIENT_URL`. Body, 2 KB at most: `{ app: "admin" | "learner" | "writer", build, kind: "error" | "unhandledrejection" | "react", message, stack?, route? }` → `204`. Nothing is written to the database. `GET /api/health/load` (superadmin) gains an `ops` object (Phase 2); its existing fields and its reset-on-read are unchanged.
+- **Build seam (Phase 5).** Two public build args per SPA, from GitHub Actions variables into Vite's `define`: `ERROR_REPORTING_DSN_SELF` and `ERROR_REPORTING_DSN_CLOUD`. Empty is valid. They are never put in `.env.production`, so a local build reports nowhere. The release a report carries is `__BUILD_VERSION__`, the same `YYMMDDHHMM-rc<sha>` the API reports as `buildId`.
+- **Env seam (Phase 2).** `OPS_TELEGRAM_BOT_TOKEN`, `OPS_ALERT_CHAT_ID`, `OPS_ENV_LABEL`, `OPS_TELEGRAM_API_BASE_URL`, `OPS_HEARTBEAT_URL`: all optional, all commented out in `qbank-deploy/.env.example` (a key listed there uncommented blocks every deploy until the server has it). The monitoring stack's own keys live in `qbank-monitoring/.env.example`, never in `qbank-deploy/.env.example`.
+- **What is never sent or stored.** A URL's query or hash (the Mini App hash carries `tgWebAppData`); a throttle tracker; a hand-off token; a phone number (digit runs in a message are masked). A route is reported as its pattern (`/papers/files/:token`). No session replay, no tracing.
+- **Permissions and enums.** None. A flag is not an access control, and the report route is public by design.
+- **Copy seam.** No new user-facing string in Phases 2 and 3: the route's refusals are the existing `This feature is not switched on.` and `Too many requests. Please wait a moment and try again.` Telegram messages to the owner are operator text, not UI copy. The privacy notices change in Phase 5, in the same commit that makes the cloud destination usable.
+- **Deploy order.** The API first, as with any flag: an older SPA sends nothing; a newer SPA against an older API reads no flag and sends nothing.
+
+### Before adding a signal, an agent or a destination
+
+1. Does it pass the one rule? Stop the thing it talks to and check that a deploy passes and the apps load as before.
+2. Is every new key optional, and absent from the required list in `qbank-deploy/.env.example`?
+3. Does it send or store anything in the "never" list? Scrub at the source, not at the collector.
+4. Does it write to the database on the learner's hot path? It must not: counters are in memory, and the free Atlas plan's budget belongs to attempts.
+5. Is its memory capped, and is the cap in the roadmap's cost table?
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:

@@ -29,6 +29,11 @@
       "name": "qbank-homepage",
       "url": "https://github.com/mroshan74/qbank-homepage.git",
       "branch": "main"
+    },
+    {
+      "name": "qbank-monitoring",
+      "url": "https://github.com/mroshan74/qbank-monitoring.git",
+      "branch": "main"
     }
   ]
 }
