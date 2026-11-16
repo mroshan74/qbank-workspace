@@ -5,6 +5,7 @@
     "qbank-deploy": true,
     "qbank-learner": true,
     "qbank-writer": true,
-    "qbank-homepage": true
+    "qbank-homepage": true,
+    "qbank-monitoring": true
   }
 }
