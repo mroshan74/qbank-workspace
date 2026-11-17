@@ -171,9 +171,9 @@ Two commits in two repos; the admin's is **pushed only after the homepage is liv
 
 ## Phase 5: assets and external accounts (non-code, tracked here)
 
-- [ ] Favicon set in `qbank-homepage/public/`, `qbank-admin/public/`, `qbank-writer/public/`; replace `qbank-learner/public/favicon.svg` (the Vite logo) and give the learner a `site.webmanifest`; review `THEME_COLOR` in each `site.js` and manifest.
-- [ ] `qbank-homepage/public/og-image.png` (1200x630) with the new mark; `docs/sample_paper.pdf` re-exported with the new attribution and watermark.
-- [ ] Logos: `logo-only-*.webp` (homepage, admin), `logo-only-*.png` (writer `AppLogo.jsx`), the learner's unused `logo-only-white-80.webp` (delete or use); login backgrounds if the look changes.
+- [ ] Favicon set in `qbank-homepage/public/`, `qbank-admin/public/`, `qbank-writer/public/`; replace `qbank-learner/public/favicon.svg` (the Vite logo) and give the learner a `site.webmanifest`; review `THEME_COLOR` in each `site.js` and manifest. *The set is built: direction A (Crucible), chosen 2026-11-17, every file in [brand/](../../brand/README.md) with a table of where each goes. Homepage applied 2026-11-17 (`THEME_COLOR` stays `#432dd7`); admin, writer and learner remain, the learner through its canvas first.*
+- [ ] `qbank-homepage/public/og-image.png` (1200x630) with the new mark; `docs/sample_paper.pdf` re-exported with the new attribution and watermark. *The Open Graph image is in (2026-11-17); the sample PDF remains.*
+- [ ] Logos: `logo-only-*.webp` (homepage, admin), `logo-only-*.png` (writer `AppLogo.jsx`), the learner's unused `logo-only-white-80.webp` (delete or use); login backgrounds if the look changes. *Homepage done 2026-11-17: `PublicLogo` shows the colour mark in light mode and the white one in dark and black. Admin, writer and learner remain; the login backgrounds are unchanged.*
 - [ ] Mailboxes `support@` and `privacy@qfoundry.in` exist and are read before the pages naming them go live.
 - [ ] When a legal entity is registered, one sentence in the homepage's Terms names it as the owner (decision 4); until then the page says QFoundry.
 - [ ] Social handles registered or decided, then filled in `qbank-homepage/src/lib/site.js`.

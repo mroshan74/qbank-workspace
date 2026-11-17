@@ -1,0 +1,91 @@
+/*
+ * QFoundry palette, direction A (Crucible). Contrast for every pair: contrast.md.
+ *
+ * The --brand-* ramp is qbank-admin's existing ramp, unchanged, so adopting
+ * this palette does not move a single existing colour. (Its 300 step,
+ * #ede9fe, is lighter than 200; that is the admin's own quirk, kept because
+ * --brand-wash reads it.) New here: the Molten accent, Ink, and named
+ * neutrals and semantic colours.
+ *
+ * Each app adopts these under its own rules: the learner app derives its ramp
+ * from one button colour (use --brand-800), and the admin's dark mode is
+ * deliberately monochrome.
+ */
+
+:root {
+  /* Brand ramp (indigo) */
+  --brand-50: #f6f4ff;
+  --brand-100: #ece8ff;
+  --brand-200: #d9d3fd;
+  --brand-300: #ede9fe;
+  --brand-400: #9b9cff;
+  --brand-500: #7a7cff;
+  --brand-600: #5f57ee;
+  --brand-700: #4e3ce0;
+  --brand-800: #432dd7;
+  --brand-900: #3524a8;
+
+  /* Accent: Molten. The mark's drop; a highlight or badge, sparingly. Never body text except 700. */
+  --accent-100: #ffe6db;
+  --accent-300: #ff8a50; /* the drop on indigo, ink and navy */
+  --accent-500: #f2551b; /* the drop on white */
+  --accent-700: #c2410c; /* accent text on white, 5.2:1 */
+
+  /* Fixed brand colours */
+  --ink: #1b1446;        /* wordmark and body text */
+  --navy: #121e28;       /* Prep dark ground */
+  --lilac: #cbc8ff;      /* qualifier on indigo, ink and navy */
+
+  /* Semantic roles, light */
+  --cta: var(--brand-800);
+  --cta-foreground: #ffffff;
+  --background: #ffffff;
+  --card: #ffffff;
+  --surface: var(--brand-50);
+  --border: #e6e3f5;
+  --foreground: var(--ink);
+  --muted-foreground: #5a5878;
+  --link: var(--brand-800);
+  --theme-color: #432dd7;
+
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+  --info: #2563eb;
+}
+
+.dark {
+  --cta: var(--brand-600);       /* white on it: 5.1:1 */
+  --cta-foreground: #ffffff;
+  --background: #121e28;
+  --card: #18283a;
+  --surface: #1d2f44;
+  --border: #2a3c52;
+  --foreground: #f3f2ff;
+  --muted-foreground: #a9b4c2;
+  --link: var(--brand-400);      /* on navy: 6.9:1 */
+  --theme-color: #121e28;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+}
+
+[data-public-theme="black"] {
+  --cta: var(--brand-600);
+  --cta-foreground: #ffffff;
+  --background: #000000;
+  --card: #0b0b10;
+  --surface: #121218;
+  --border: #23232d;
+  --foreground: #f3f2ff;
+  --muted-foreground: #a1a1b5;
+  --link: var(--brand-400);
+  --theme-color: #000000;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+}
