@@ -414,7 +414,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
   | `POST /telegram/posts` and `/telegram/posts/document` | Take an optional `templateId`, never template text. Post rows return `templateId` and `templateName`. |
 - **Enum and permission seams: nothing.** No new enum and no new permission. Writing a provided template is decided by the superadmin role, not by a permission.
 - **Copy seam.** Admin: `Post templates`, `Provided`, `Your templates`, `Make a copy`, `Default template`, `View in App` and `View in Web` (the default labels). API: `Unknown placeholder {{x}}. Choose one from the list.` No em dashes.
-- **Not built: custom (premium) emoji.** In a channel, Telegram allows them only to a bot that owns a username bought on Fragment.
+- **Not built: custom (premium) emoji.** In a channel, Telegram allows them only to a bot that owns a username bought on Fragment. *Planned without one on 2026-11-18: see "Premium emoji in templates (0076)" below.*
 - **Deploy order.** The API first (Phase 1 changes the buttons on its own; the routes in Phases 3 and 4 are additive, and a post without `templateId` behaves as before), then the admin.
 - **Amended by 0073** (below). Until each of its phases lands, this subsection is the contract in force.
 
@@ -446,6 +446,30 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
   - The template list's `placeholders` field comes from the registry. **The admin's chips and suggestions read the API's list, never a copy.**
 - **Copy seam.** Admin: `Default`, `Restore original`, `Template for a link` / `for a PDF` / `for a quiz`, `Placeholders`, `Reserved`, `Override`, `Different for each kind`. API messages follow the no-em-dash rule.
 - **Deploy order.** The shapes change (labels removed, `defaultTemplates`, `default`), so the API and the admin deploy together, API first. No migration: the database is rebuilt.
+
+### Premium emoji in templates (0076)
+
+**Status: decision accepted 2026-11-18; Phase 0 (this contract, the decision, the roadmap and a test on real Telegram) done. Nothing below is built yet: until each phase lands, the 0072 and 0073 subsections above are the contract in force.** Decision [0076](qbank-api/doc/decisions/0076-telegram-premium-emoji-by-forward.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji.md](qbank-api/doc/roadmaps/telegram-premium-emoji.md). The API owns Phases 1 to 4, the admin Phase 5, `qbank-deploy` Phase 6. Each phase is committed only on the owner's approval.
+
+- **Why the shape.** A bot sends custom emoji into a channel only with a Fragment username, but into a private chat with just its owner's Premium. So a template with premium emoji is sent to the staff member's own chat, and they forward it to the channel with the sender hidden. There is no Fragment username and no userbot.
+- **Template format (Phase 1).** Three additions to the 0072 format, all turned into entities, never a parse mode:
+  - `{{emoji:<id> <fallback>}}`, a premium emoji: its numeric id and one ordinary emoji that Telegram shows where the custom one is unavailable. It counts toward the template limit as the fallback's length.
+  - `> ` at a line's start, a quote box (`blockquote`).
+  - An underline marker (`underline`), settled in Phase 1.
+  - The preview's `entities` gain the kinds `underline`, `blockquote` and `custom_emoji` (with `custom_emoji_id`); template rows and the preview gain `premiumEmoji: boolean`. **The admin's preview must draw all three.**
+- **Endpoint seam.** All `telegram:manage`.
+
+  | Route | Phase | Does |
+  |---|---|---|
+  | `GET /telegram/emoji?ids=` | 1 | `{ id, fallback, format: 'lottie' \| 'video' \| 'image' }` for up to 50 ids, from Telegram. |
+  | `GET /telegram/emoji/:id/file` | 1 | The emoji's file, cached by the API, `Cache-Control: private, max-age=31536000, immutable`. The bot token never reaches the browser. |
+  | `POST /telegram/me/link-code`, `GET /telegram/me`, `DELETE /telegram/me` | 2 | Link the caller's own Telegram account (a `t.me/<bot>?start=<code>` deep link), read it, unlink it. |
+  | `POST /telegram/posts`, `/telegram/posts/document` | 4 | Take `delivery: 'channel' \| 'me'` (default `channel`). `me` sends the same post to the caller's linked chat. A premium template with `channel` answers 400. |
+- **Buttons after the forward (Phase 4).** A forward with the sender hidden drops View in App and View in Web. The bot adds them back to the forwarded post when it holds **Edit messages of others** in that channel (it matches the post to the draft by content). Channel rows gain `canEditMessages`; the admin asks for the right and says when it is missing. A premium template must also hold `{{call_to_action}}` or `{{link}}`. A staff member without Premium loses the premium emoji on a forward with the sender hidden; the bot reads `is_premium` from their messages and warns them, and the admin shows the same note (a forward with the sender shown keeps everything, under a "Forwarded from" line).
+- **The bot (Phase 3).** `/template` from a linked staff member asks for the kind, and the next message, forwarded or typed, is saved as one of their organization's templates. `/cancel` stops it. Links, spoilers and code in that message are dropped and named in the reply.
+- **Enum and permission seams: nothing new.** `delivery` is a request field, not a config enum; it becomes one only if the admin needs to list it.
+- **Copy seam.** Admin: `Connect my Telegram`, `Add from Telegram`, `Send to my Telegram`, `Premium emoji`. Bot and API messages follow the no-em-dash rule.
+- **Deploy order.** The API first (every route and field is additive), then the admin. `TELEGRAM_EMOJI_CACHE_DIR` is optional; on the server it sits on a named volume (Phase 6).
 
 ### Mini App sign-in (0064)
 
