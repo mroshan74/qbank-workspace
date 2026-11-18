@@ -473,12 +473,12 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 #### Revision 2 (0077)
 
-**Status: decision accepted 2026-11-18; Phases 0 to 3 built (the call to action added on capture, its overrides words only, a quiz's polls posted after the forward); Phases 4 and 5 open.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
+**Status: decision accepted 2026-11-18; Phases 0 to 4 built (the call to action added on capture, its overrides words only, a quiz's polls posted after the forward, a channel's @ and title kept current); Phase 5, the owner's run on real Telegram, open.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
 
 - **`/template` adds `{{call_to_action}}`** to a post without `{{call_to_action}}` or `{{link}}`, at its end. No route changes. *Built (Phase 1).*
 - **A quiz to `me` sends only its opening post**; once it is forwarded into the channel the bot posts the polls there. The post row gains a waiting state the admin's history names. *Built (Phase 3):* the row's `draft.awaitingForward` (a boolean in the response's `draft`) is the waiting state, the status reads `sending` meanwhile, and a quiz not forwarded within a day is `failed` with "The opening post was not forwarded to the channel within a day."
 - **A `{{call_to_action}}` override is words only**: `PATCH`/`POST /telegram/placeholders*` refuse a link on it, and the admin's override form shows no link field for it. The post always links the words to the paper. *Built (Phase 2):* placeholder rows carry `wordsOnly: true` for it, which is what the admin reads; the refusal is `400` "The call to action always links to the paper. Change its words only."
-- **A channel's `title` and `username` are kept current** from Telegram; `{{channel}}` is unchanged.
+- **A channel's `title` and `username` are kept current** from Telegram; `{{channel}}` is unchanged. *Built (Phase 4):* from every channel post and from `getChat` before a post, so the channel list and the post dialog show the new title or @ too. No route or field changes.
 - **Not built, on purpose:** the bot posting or forwarding a draft into a channel itself (it shows "Forwarded from" or loses the premium emoji).
 
 ### Mini App sign-in (0064)
