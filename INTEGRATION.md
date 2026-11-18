@@ -471,6 +471,16 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **Copy seam.** Admin: `Your Telegram`, `Connect my Telegram`, `Connected as <name>`, `Add from Telegram`, `Premium emoji`, `Send to my Telegram`, `Sent to forward` (the full list is in the admin's `docs/features/telegram.md`). The admin says connect, never link (its copy rule). Bot and API messages follow the no-em-dash rule.
 - **Deploy order.** The API first (every route and field is additive), then the admin. `TELEGRAM_EMOJI_CACHE_DIR` is optional; on the server it sits on a named volume (Phase 6).
 
+#### Revision 2 (0077)
+
+**Status: decision accepted 2026-11-18; Phase 0 written; nothing built.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
+
+- **`/template` adds `{{call_to_action}}`** to a post without `{{call_to_action}}` or `{{link}}`, at its end. No route changes.
+- **A quiz to `me` sends only its opening post**; once it is forwarded into the channel the bot posts the polls there. The post row gains a waiting state the admin's history names.
+- **A `{{call_to_action}}` override is words only**: `PATCH`/`POST /telegram/placeholders*` refuse a link on it, and the admin's override form shows no link field for it. The post always links the words to the paper.
+- **A channel's `title` and `username` are kept current** from Telegram; `{{channel}}` is unchanged.
+- **Not built, on purpose:** the bot posting or forwarding a draft into a channel itself (it shows "Forwarded from" or loses the premium emoji).
+
 ### Mini App sign-in (0064)
 
 **Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack against a stand-in bot; a phone check with the real bot is owed.** Phase 4 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0064](qbank-api/doc/decisions/0064-telegram-mini-app-sign-in.md).
