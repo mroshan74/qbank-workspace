@@ -449,13 +449,13 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Premium emoji in templates (0076)
 
-**Status: decision accepted 2026-11-18; Phase 0 (this contract, the decision, the roadmap and a test on real Telegram) done. Nothing below is built yet: until each phase lands, the 0072 and 0073 subsections above are the contract in force.** Decision [0076](qbank-api/doc/decisions/0076-telegram-premium-emoji-by-forward.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji.md](qbank-api/doc/roadmaps/telegram-premium-emoji.md). The API owns Phases 1 to 4, the admin Phase 5, `qbank-deploy` Phase 6. Each phase is committed only on the owner's approval.
+**Status: decision accepted 2026-11-18; Phase 0 (this contract, the decision, the roadmap and a test on real Telegram) done. Phase 1 is built in the API (2026-11-18): the template format below, `premiumEmoji` on rows and previews, and the two emoji routes. The rest is not built yet: until each phase lands, the 0072 and 0073 subsections above are the contract in force.** Decision [0076](qbank-api/doc/decisions/0076-telegram-premium-emoji-by-forward.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji.md](qbank-api/doc/roadmaps/telegram-premium-emoji.md). The API owns Phases 1 to 4, the admin Phase 5, `qbank-deploy` Phase 6. Each phase is committed only on the owner's approval.
 
 - **Why the shape.** A bot sends custom emoji into a channel only with a Fragment username, but into a private chat with just its owner's Premium. So a template with premium emoji is sent to the staff member's own chat, and they forward it to the channel with the sender hidden. There is no Fragment username and no userbot.
 - **Template format (Phase 1).** Three additions to the 0072 format, all turned into entities, never a parse mode:
   - `{{emoji:<id> <fallback>}}`, a premium emoji: its numeric id and one ordinary emoji that Telegram shows where the custom one is unavailable. It counts toward the template limit as the fallback's length.
   - `> ` at a line's start, a quote box (`blockquote`).
-  - An underline marker (`underline`), settled in Phase 1.
+  - `__text__`, underline (`underline`).
   - The preview's `entities` gain the kinds `underline`, `blockquote` and `custom_emoji` (with `custom_emoji_id`); template rows and the preview gain `premiumEmoji: boolean`. **The admin's preview must draw all three.**
 - **Endpoint seam.** All `telegram:manage`.
 
