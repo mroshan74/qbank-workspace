@@ -439,7 +439,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
   The rules:
   - **Core names** (`paper_name`, `paper_code`, `exam_date`, `level`, `level_tag`, `questions`, `channel`, `channel_title`, `organization`, `link`, `note`, `licence`) are refused as names for anyone.
-  - `heading`, `quiz_line` and `call_to_action` may be overridden.
+  - `heading`, `quiz_line` and `call_to_action` may be overridden. Since 0077 (P3), `call_to_action`'s override is words only: a link on it is refused, its rows carry `wordsOnly: true`, and the post links the words to the paper.
   - **A token's value** is the organization's own, else the system's, else the built-in.
   - A value is text or an `https` link, and may differ per kind.
   - The superadmin never reads an organization's own placeholders.
@@ -473,11 +473,11 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 #### Revision 2 (0077)
 
-**Status: decision accepted 2026-11-18; Phases 0 and 1 built (the call to action added on capture); Phases 2 to 5 open.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
+**Status: decision accepted 2026-11-18; Phases 0 to 2 built (the call to action added on capture, its overrides words only); Phases 3 to 5 open.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
 
 - **`/template` adds `{{call_to_action}}`** to a post without `{{call_to_action}}` or `{{link}}`, at its end. No route changes. *Built (Phase 1).*
 - **A quiz to `me` sends only its opening post**; once it is forwarded into the channel the bot posts the polls there. The post row gains a waiting state the admin's history names.
-- **A `{{call_to_action}}` override is words only**: `PATCH`/`POST /telegram/placeholders*` refuse a link on it, and the admin's override form shows no link field for it. The post always links the words to the paper.
+- **A `{{call_to_action}}` override is words only**: `PATCH`/`POST /telegram/placeholders*` refuse a link on it, and the admin's override form shows no link field for it. The post always links the words to the paper. *Built (Phase 2):* placeholder rows carry `wordsOnly: true` for it, which is what the admin reads; the refusal is `400` "The call to action always links to the paper. Change its words only."
 - **A channel's `title` and `username` are kept current** from Telegram; `{{channel}}` is unchanged.
 - **Not built, on purpose:** the bot posting or forwarding a draft into a channel itself (it shows "Forwarded from" or loses the premium emoji).
 
