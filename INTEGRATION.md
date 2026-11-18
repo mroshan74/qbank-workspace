@@ -482,6 +482,17 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 - **A template holds up to 100 premium emoji** (P6, 2026-11-18, from the owner's Phase 5 run), Telegram's own limit; it was 50. `GET /telegram/emoji?ids=` takes up to 100 ids to match.
 - **Not built, on purpose:** the bot posting or forwarding a draft into a channel itself (it shows "Forwarded from" or loses the premium emoji).
 
+#### Visual editor, emoji picker and premium emoji library (0078)
+
+**Status: planned. Decision accepted 2026-11-19; Phase 0 (this subsection, the decision, the roadmap) complete: the dev bot read a pack by name, made a custom emoji pack for a staff account, and its emoji survived the draft and the owner's forward with the sender hidden. Nothing built: until each phase lands, the subsections above are the contract in force.** Decision [0078](qbank-api/doc/decisions/0078-telegram-template-editor-and-emoji-library.md); roadmap [qbank-api/doc/roadmaps/telegram-template-editor-and-emoji-library.md](qbank-api/doc/roadmaps/telegram-template-editor-and-emoji-library.md). The API owns Phases 4, 5 and 7, the admin Phases 1, 2, 3, 6 and 7. Each phase is committed only on the owner's approval.
+
+- **The template text does not change.** The admin's visual editor reads and writes the same text the API parses (0072, 0076). **Grammar seam:** the admin carries a port of the formatting part of `parseTemplate` and of the capture's escaping; a change to the template language changes the API, the admin's port and the shared round-trip cases in one change. *Planned (Phases 1 and 2).*
+- **Endpoint seam, planned (Phase 4):** `GET /telegram/emoji/library` (the organization's premium emoji and the provided ones, grouped by pack), `DELETE /telegram/emoji/library/:id`, `DELETE /telegram/emoji/library/packs/:setName`; the superadmin writes the provided library through the same routes. All `telegram:manage`; another organization's row is a 404. Saving or capturing a template adds its emoji.
+- **Planned (Phase 5):** `POST /telegram/emoji/library/packs` (`{ address }`, a `t.me/addemoji/<name>` address) and `/emoji` in the bot's chat (the next forwarded message's premium emoji join the library).
+- **Planned (Phase 7, if the Phase 0 probe passes):** `POST /telegram/emoji/own`, an uploaded 100×100 image made into a premium emoji in a pack the bot creates for the caller's connected Telegram account.
+- **Enum and permission seams:** a library row's `source` (`template`, `pack`, `forward`, `own`) is shown in the admin only as a label; whether it goes on `GET /api/config` is decided in Phase 4. No new permission.
+- **Delivery is unchanged:** a template with premium emoji still goes only to the staff member's own chat (0076 E1, E2).
+
 ### Mini App sign-in (0064)
 
 **Status: built in the API and the learner app (2026-11-12), verified on the prod-parity stack against a stand-in bot; a phone check with the real bot is owed.** Phase 4 of [qbank-learner/docs/roadmaps/telegram-learner-app.md](qbank-learner/docs/roadmaps/telegram-learner-app.md); API decision [0064](qbank-api/doc/decisions/0064-telegram-mini-app-sign-in.md).
