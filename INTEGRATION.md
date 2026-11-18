@@ -473,9 +473,9 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 #### Revision 2 (0077)
 
-**Status: decision accepted 2026-11-18; Phase 0 written; nothing built.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
+**Status: decision accepted 2026-11-18; Phases 0 and 1 built (the call to action added on capture); Phases 2 to 5 open.** Decision [0077](qbank-api/doc/decisions/0077-telegram-premium-emoji-revision-2.md); roadmap [qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md](qbank-api/doc/roadmaps/telegram-premium-emoji-revision-2.md). The API owns every phase; the admin has a part of Phases 2 and 3.
 
-- **`/template` adds `{{call_to_action}}`** to a post without `{{call_to_action}}` or `{{link}}`, at its end. No route changes.
+- **`/template` adds `{{call_to_action}}`** to a post without `{{call_to_action}}` or `{{link}}`, at its end. No route changes. *Built (Phase 1).*
 - **A quiz to `me` sends only its opening post**; once it is forwarded into the channel the bot posts the polls there. The post row gains a waiting state the admin's history names.
 - **A `{{call_to_action}}` override is words only**: `PATCH`/`POST /telegram/placeholders*` refuse a link on it, and the admin's override form shows no link field for it. The post always links the words to the paper.
 - **A channel's `title` and `username` are kept current** from Telegram; `{{channel}}` is unchanged.
