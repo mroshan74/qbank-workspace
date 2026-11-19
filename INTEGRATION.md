@@ -706,6 +706,11 @@ licence notice on every export. Seams touched:
      on it. Returns `{ data: { licence, cover }, updatedAt? }`.
    - `PUT /api/app-settings/paper-export` — `settings:manage`. **Full replace,
      not a patch.**
+   - Planned (2026-11-19): Phase 1 of
+     [qbank-admin/docs/roadmaps/question-paper-editor-fixes-2026-11.md](qbank-admin/docs/roadmaps/question-paper-editor-fixes-2026-11.md)
+     adds `textWatermarkOnByDefault` (boolean, default `true`) to `data`, the
+     workspace-wide baseline for the text watermark. Because the PUT is a full
+     replace, the admin's Paper exports form must send it on every save.
    - `GET /api/app-settings/export-limits` — authenticated, ungated: the batch
      screen must know the ceiling before it can enforce it.
    - `PUT /api/app-settings/export-limits` — **`@Roles(superadmin)`**. The only
