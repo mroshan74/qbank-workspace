@@ -166,7 +166,7 @@ Answer these in the feature's roadmap or PR before writing code:
 
 ## Watermark contract (0080)
 
-**Every feature that renders, downloads, copies or configures a paper's text watermark follows these rules, in every repo.** The decision is [0080](qbank-api/doc/decisions/0080-watermark-precedence.md) (2026-11-21); the work is phased in [watermark-precedence.md](qbank-api/doc/roadmaps/watermark-precedence.md). **Phases 0 to 2 are done** (2026-11-21): the API settles every rule below, the published switch included. The admin still resolves against the caller's defaults until its Phases 3 and 4, so check that roadmap's status line before relying on a rule in the admin. Handoff: [qbank-api/doc/handover/watermark-precedence-frontend-prompt.md](qbank-api/doc/handover/watermark-precedence-frontend-prompt.md).
+**Every feature that renders, downloads, copies or configures a paper's text watermark follows these rules, in every repo.** The decision is [0080](qbank-api/doc/decisions/0080-watermark-precedence.md) (2026-11-21); the work is phased in [watermark-precedence.md](qbank-api/doc/roadmaps/watermark-precedence.md). **Phases 0 to 4 are done** (2026-11-21): the API settles every rule below, the published switch included, and the admin's Settings and editor follow them. The admin's published-paper control is its Phase 5, so check that roadmap's status line before relying on it. Handoff: [qbank-api/doc/handover/watermark-precedence-frontend-prompt.md](qbank-api/doc/handover/watermark-precedence-frontend-prompt.md).
 
 - **Three levels, one order.** The vendor (the System organization's `paper-defaults` watermark, the one vendor place; `paper-export.textWatermarkOnByDefault` goes), then the organization (its own `paper-defaults` row), then the paper (`ExamPaperEditorState.settings.watermark`). A new organization writes no row and inherits the vendor's, which is seeded **on**.
 - **An organization that is off wins.** No paper of an organization that is off prints the text watermark, whatever the paper says; the paper's own choice is kept and applies again when the organization is switched back on. An organization that is on lets a paper override it, on or off. The editor says so where the paper's setting is shown.
@@ -175,7 +175,7 @@ Answer these in the feature's roadmap or PR before writing code:
 - **A copy starts clean.** `duplicate` and `promote` drop the source's whole `watermark` block, its saved `title` and its `branding`, so a customer's copy of a vendor paper follows the customer and prints its own name.
 - **A published paper's on/off.** `PUT /exam-papers/:id/watermark` with `{ isEnabled: true | false | null }` (`null` follows the organization), `exam-paper:update`, `published` only (`canSwitchPaperWatermark`, mirrored in `qbank-admin/src/lib/paperLifecycle.js`). It writes that one key through the Mongoose model, so the render cache drops the paper at once. In the admin it is the one watermark control on a published paper, it serves the screen and the download alike, and every change is confirmed first. The per-download Include watermark box and the screen-only View > Watermark eye go.
 - **Unchanged:** the trace watermark (vendor-owned, 0058), the PREVIEW stamp on a draft download, and the 5-minute render cache for an organization's own settings change (0065 D2).
-- **Twin files.** `backendDocument.js` in the admin and the learner keeps one merge; change both (see "The PDF engine is a port, not a shared library").
+- **Twin files.** The merge is `effectiveWatermark` in `helpers/watermarkPolicy.js`, byte-identical in the admin (`question-paper-editor/helpers/`) and the learner (`src/pdf/helpers/`), and used by each `backendDocument.js`; change both (see "The PDF engine is a port, not a shared library").
 
 ### Before building a feature that touches the watermark
 
@@ -881,7 +881,7 @@ The Consumer Download MVP added a **second frontend** and the API surface behind
 | Admin | Client |
 |---|---|
 | `question-paper-editor/components/pdf/` → `PdfQuestionBlock.jsx`, `PdfQuestionPage.jsx`, `PaperDocument.jsx`, `toPdfElements.jsx`, `questionMath.js` | `src/pdf/components/` |
-| `question-paper-editor/helpers/` → `autoPagination.js`, `answerKeyLayout.js` | `src/pdf/helpers/` |
+| `question-paper-editor/helpers/` → `autoPagination.js`, `answerKeyLayout.js`, `watermarkPolicy.js` (decision 0080) | `src/pdf/helpers/` |
 | `src/lib/questionAnswer.js`, `components/common/rich-text/helpers/{richTextUtils,mathRender}.js` | `src/pdf/helpers/` — all three sit **inside** `src/pdf/` in the client, because anything outside it is a route for a static import back into the 2.1 MB engine |
 | `src/lib/fonts/catalog.js` | `src/pdf/fonts/catalog.js` |
 
