@@ -115,7 +115,7 @@ The question paper editor's round of owner-reported fixes (a workspace-wide wate
 
 **Not looking AI-made** comes from the owner's video "UI Libraries for Claude Code (Ban the AI Look)", on 2026-11-21. Its rules: a library per job, shadcn restyled rather than shipped as it comes, and one showpiece per page. There are two roadmaps, one per repo, and neither touches the API.
 - **Homepage:** owned by `qbank-homepage` in [qbank-homepage/docs/roadmaps/homepage-polish-2026-11.md](qbank-homepage/docs/roadmaps/homepage-polish-2026-11.md), on the branch `homepage-polish-2026-11`.
-  - It brings a heavier hero type and NumberFlow on the figures.
+  - It brings a heavier hero type. NumberFlow on the figures was tried and dropped by the owner.
   - Its one showpiece is "The foundry": an animated section in which the engine takes in questions, matches them, links their history, graphs them and analyses them, then turns them into papers for institutes and insights for learners.
   - Each stage's copy claims only what is in production. The stage map in the roadmap tracks the question intelligence phases.
 - **Admin:** owned by `qbank-admin` in [qbank-admin/docs/roadmaps/admin-polish-2026-11.md](qbank-admin/docs/roadmaps/admin-polish-2026-11.md), on the branch `admin-polish-2026-11`.
