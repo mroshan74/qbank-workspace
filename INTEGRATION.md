@@ -90,7 +90,7 @@ See [decision 0010](qbank-api/doc/decisions/0010-config-endpoint-as-source-of-tr
 
 > **Delete-framework sync (done):** the unified delete framework added `exam-paper:restore` and `question:purge` / `user:purge` / `exam-paper:purge` to the backend registry ([src/common/permissions.ts](qbank-api/src/common/permissions.ts)) and mirrored them in the frontend registry ([user-management/data/constants.js](qbank-admin/src/pages/user-management/data/constants.js)) in the same change. `*:purge` is superadmin-only (in no role default). See [qbank-api/doc/decisions/0019-soft-delete-plugin.md](qbank-api/doc/decisions/0019-soft-delete-plugin.md) and [qbank-admin/docs/features/delete-framework.md](qbank-admin/docs/features/delete-framework.md).
 
-> **Global paper defaults (done):** a new `app-settings` key `paper-defaults` stores workspace-wide default values for editor layout, typography, watermark, and export page size. `GET /api/app-settings/paper-defaults` is ungated; `PUT /api/app-settings/paper-defaults` requires `settings:manage`. The frontend merges these defaults into every loaded paper underneath per-paper saved settings and above the hardcoded `DEFAULT_PAPER` fallback. See [qbank-admin/docs/features/settings.md](qbank-admin/docs/features/settings.md).
+> **Global paper defaults (done):** a new `app-settings` key `paper-defaults` stores workspace-wide default values for editor layout, typography, watermark, and export page size. `GET /api/app-settings/paper-defaults` is ungated; `PUT /api/app-settings/paper-defaults` requires `settings:manage`. The frontend merges these defaults into every loaded paper underneath per-paper saved settings and above the hardcoded `DEFAULT_PAPER` fallback. See [qbank-admin/docs/features/settings.md](qbank-admin/docs/features/settings.md). **For the watermark this is superseded by the [Watermark contract](#watermark-contract-0080)** (decision 0080, 2026-11-21): an organization that is off wins over a paper, and the keys follow key by key.
 
 ---
 
@@ -146,7 +146,7 @@ If you can only touch one repo in this session, do your side **and** leave a tag
 - **Download:** a final copy needs `published` and at least 1 question. A superadmin may download a final copy at any status. A draft offers only the editor's watermarked preview copy. Nobody downloads a paper with 0 questions.
 - **Originals are copy-only for a customer** (decision [0062](qbank-api/doc/decisions/0062-original-exam-papers-are-copy-only-for-customers.md), 2026-11-10). A caller outside the System organization takes no final copy of an `exam_paper` (403 on `POST /exam-papers/:id/downloads/claim` and `/downloads`, so single, bulk and editor downloads alike) and mints no share link for one (403 on `POST /share-links`); a customer's existing link on an original resolves to no link. It also may not read the original's editor document, the layout a PDF is rendered from (403 on `GET /exam-papers/:id/editor-document`, built and verified on 2026-11-10, [original-paper-layout-read.md](qbank-api/doc/roadmaps/original-paper-layout-read.md); the admin editor shows the API's sentence when a customer types an original's editor address; deploy the API first). It lists, opens and copies the original as before, and reads its questions in the Questions list; the copy is its own paper, prints its own name, and downloads and shares like any other. Decided by organization (`isVendorCaller`), never role, in `mayDistributeExamPaper` on both sides. Learners are unchanged. Phased in the admin's [client-feedback-round-5.md](qbank-admin/docs/roadmaps/client-feedback-round-5.md); **built and verified on the prod-parity stack on 2026-11-10** (258 of 258 isolation probes, a four-account browser walk), not merged or pushed. Deploy the API first, then the admin.
 - **Visibility:** another organization, **including the vendor's staff and its superadmin**, and every public or shared surface, sees `published` papers only, and only the vendor's curators (`question:promote`) see another customer organization's at all. Archived and deleted papers never appear there. A foreign published paper is read-only: every write on it answers 404, and the vendor's way to take it is `POST /exam-papers/:id/promote`. The vendor's paper-builder pool and the editor's question references are System-only for a System caller. [0044](qbank-api/doc/decisions/0044-vendor-reads-published-writes-own.md), phased in [vendor-workspace-and-shared-library.md](qbank-api/doc/roadmaps/vendor-workspace-and-shared-library.md); until its API phases land, a superadmin still sees and edits everything.
-- **Editing:** drafts only. A superadmin may edit a paper's details at any status.
+- **Editing:** drafts only. A superadmin may edit a paper's details at any status. **One exception** (decision [0080](qbank-api/doc/decisions/0080-watermark-precedence.md) W6, 2026-11-21, not yet built): a `published` paper's watermark on/off, and nothing else, may change without unpublishing, through `PUT /exam-papers/:id/watermark` with `exam-paper:update`, asked of `canSwitchPaperWatermark`. See the [Watermark contract](#watermark-contract-0080).
 - **Dates:** a `custom_paper`'s date of exam is today or later (Asia/Kolkata) and its year follows the date. An `exam_paper` (superadmin-only original) may carry any past date, year 2021 to the current year.
 - **Naming:** "Exam paper" means an original PSC paper; "Custom paper" means one built in Paper Builder, and an exam copy is a custom paper. Titles and actions follow `examType`, which never changes after create.
 - **Surfaces split by type:** the admin's Exam Papers page lists `exam_paper` only, and its create route (`POST /exam-papers`) creates nothing else. Custom papers are listed on Question Bank → Custom Papers and in Paper Builder, and are created only by generate, sample or duplicate. The learner list is `exam_paper` only, as before. Rolled out by [the admin roadmap](qbank-admin/docs/roadmaps/question-bank-paper-split-and-request-hygiene.md) (Phases 5 and 7).
@@ -161,6 +161,28 @@ Answer these in the feature's roadmap or PR before writing code:
 3. **What does another organization, or a learner, see?** Published only?
 4. **Does a superadmin get a bypass,** and is it one the contract already grants?
 5. **Does it go through the lifecycle helper** on both sides, with the API as the gate and the UI only hiding what the API would refuse?
+
+---
+
+## Watermark contract (0080)
+
+**Every feature that renders, downloads, copies or configures a paper's text watermark follows these rules, in every repo.** The decision is [0080](qbank-api/doc/decisions/0080-watermark-precedence.md) (2026-11-21); the work is phased in [watermark-precedence.md](qbank-api/doc/roadmaps/watermark-precedence.md). **Phase 0 only is done**: until a phase lands the code still behaves as described under "Paper Builder export" and "client feedback round 2" below, so check that roadmap's status line before relying on a rule.
+
+- **Three levels, one order.** The vendor (the System organization's `paper-defaults` watermark, the one vendor place; `paper-export.textWatermarkOnByDefault` goes), then the organization (its own `paper-defaults` row), then the paper (`ExamPaperEditorState.settings.watermark`). A new organization writes no row and inherits the vendor's, which is seeded **on**.
+- **An organization that is off wins.** No paper of an organization that is off prints the text watermark, whatever the paper says; the paper's own choice is kept and applies again when the organization is switched back on. An organization that is on lets a paper override it, on or off. The editor says so where the paper's setting is shown.
+- **Key by key.** A level stores a watermark key only when someone set it there; a missing key follows the level above. A paper's blank text or subtext follows its organization's. **An organization never inherits the vendor's `text` or `subText`**: they start empty, and an empty text prints the downloading organization's name in the admin and the owner's (`licensedTo`) for a learner, as before. The on/off and the look follow the vendor until the organization sets them.
+- **The owner, never the viewer.** One resolver, `qbank-api/src/common/watermark-policy.ts`, settles the organization's watermark for the paper's owner. `GET /papers/:id/render-document` sends it settled (a paper's own on/off is sent as off when its owner is off), so the learner app needs no change. `GET /exam-papers/:id/editor-document` returns it as `organizationWatermark`, and every admin path that builds a paper uses that, not `GET /app-settings/paper-defaults` (which is the caller's).
+- **A copy starts clean.** `duplicate` and `promote` drop the source's whole `watermark` block, its saved `title` and its `branding`, so a customer's copy of a vendor paper follows the customer and prints its own name.
+- **A published paper's on/off.** `PUT /exam-papers/:id/watermark` with `{ isEnabled: true | false | null }` (`null` follows the organization), `exam-paper:update`, `published` only (`canSwitchPaperWatermark`, mirrored in `qbank-admin/src/lib/paperLifecycle.js`). It writes that one key through the Mongoose model, so the render cache drops the paper at once. In the admin it is the one watermark control on a published paper, it serves the screen and the download alike, and every change is confirmed first. The per-download Include watermark box and the screen-only View > Watermark eye go.
+- **Unchanged:** the trace watermark (vendor-owned, 0058), the PREVIEW stamp on a draft download, and the 5-minute render cache for an organization's own settings change (0065 D2).
+- **Twin files.** `backendDocument.js` in the admin and the learner keeps one merge; change both (see "The PDF engine is a port, not a shared library").
+
+### Before building a feature that touches the watermark
+
+1. **Which level does it read?** The owner's settled `organizationWatermark`, never the caller's Paper defaults.
+2. **Does an organization that is off still win?**
+3. **Does it save only the keys set at its own level?**
+4. **Does a published paper change only through the W6 route,** with the confirmation in the admin?
 
 ---
 
@@ -717,6 +739,10 @@ licence notice on every export. Seams touched:
      `duplicate` and `promote` drop it from the copy, and
      `GET /papers/:id/render-document` settles `paperDefaults.watermark.isEnabled`
      against this switch, so the learner app needs no change.
+   - **Superseded by the [Watermark contract](#watermark-contract-0080)**
+     (decision 0080, 2026-11-21): `textWatermarkOnByDefault` is removed and the
+     System organization's Paper defaults are the one vendor place. Until its
+     Phase 1 lands, the two notes above still describe the code.
    - `GET /api/app-settings/export-limits` — authenticated, ungated: the batch
      screen must know the ceiling before it can enforce it.
    - `PUT /api/app-settings/export-limits` — **`@Roles(superadmin)`**. The only
@@ -1107,7 +1133,10 @@ phase adds its seams here as it lands.
    from anyone but a superadmin or a vendor `admin` keeps the stored trace setting. The
    default `watermark.text` and `subText` are empty, and an empty text prints
    `licensedTo` in both PDF engines (`withWatermarkText`, mirrored in the admin and the
-   learner).
+   learner). Since the admin editor-fixes roadmap's Phase 1 (2026-11-19) the admin
+   prints the **downloading** organization's name there instead (`watermarkName`); the
+   learner still prints `licensedTo`. Decision 0080 keeps both and adds that an
+   organization never inherits the vendor's text.
 2. **Enums, permissions, endpoints (Phase 3)** — `assignableRoles` left `/api/config`,
    `user:manage-roles` left the registry, `PATCH /users/:id/roles` is gone (404), and
    `roleProfiles.assignedRoles` is no longer read, written or returned. The admin dropped
