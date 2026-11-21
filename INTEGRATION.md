@@ -711,6 +711,12 @@ licence notice on every export. Seams touched:
      adds `textWatermarkOnByDefault` (boolean, default `true`) to `data`, the
      workspace-wide baseline for the text watermark. Because the PUT is a full
      replace, the admin's Paper exports form must send it on every save.
+   - Since Phase 4a of that roadmap (2026-11-21) a paper's editor settings
+     carry `watermark.isEnabled` only when someone switched it on that paper;
+     otherwise it follows the owner's `paper-defaults`, then this switch.
+     `duplicate` and `promote` drop it from the copy, and
+     `GET /papers/:id/render-document` settles `paperDefaults.watermark.isEnabled`
+     against this switch, so the learner app needs no change.
    - `GET /api/app-settings/export-limits` — authenticated, ungated: the batch
      screen must know the ceiling before it can enforce it.
    - `PUT /api/app-settings/export-limits` — **`@Roles(superadmin)`**. The only
