@@ -120,7 +120,7 @@ The question paper editor's round of owner-reported fixes (a workspace-wide wate
   - Each stage's copy claims only what is in production. The stage map in the roadmap tracks the question intelligence phases.
 - **Admin:** owned by `qbank-admin` in [qbank-admin/docs/roadmaps/admin-polish-2026-11.md](qbank-admin/docs/roadmaps/admin-polish-2026-11.md), on the branch `admin-polish-2026-11`.
   - It brings Sonner for toasts, raw palette classes moved to semantic tokens area by area, and the login screen in the Crucible identity.
-  - The admin gets no showpieces. Its Phase 1 (Sonner in place of react-hot-toast) is committed, Phase 2 (Taxonomy's raw neutral classes as semantic tokens) is committed, and Phase 3 (every other raw neutral and state hue to tokens; the identity colours left for the owner) was built on 2026-11-21.
+  - The admin gets no showpieces. Its Phase 1 (Sonner in place of react-hot-toast) is committed, Phases 2 and 3 (every raw neutral and state hue to tokens; the identity colours left for the owner) and Phase 4 (the unused font removed, the login screen on an Ink brand panel, the owner's option A) are committed; the roadmap is complete apart from the identity colours.
 - The rules sit in each repo: hard rule 9 of `qbank-homepage/CLAUDE.md`, and `qbank-admin/DESIGN.md` §6.13.
 - Phase 0 (docs) of both was committed on 2026-11-21. Homepage Phase 1 (the 88px hero) was built and verified the same day, and awaits the owner's approval to commit. Molten was tried in it and removed at the owner's request: the site stays purple only. Each phase is committed only on the owner's approval, and nothing is pushed.
 
