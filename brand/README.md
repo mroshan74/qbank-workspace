@@ -76,7 +76,7 @@ Applying these is Phase 5 of the brand roadmap, one app at a time, and is not do
 
 ## Not in this set
 
-- **Login backgrounds.** The admin's is done (2026-11-22, `qbank-admin` admin-polish Phase 4): an Ink `#1B1446` panel with the white mark, the Studio qualifier in Lilac `#CBC8FF`, and a quiet ring motif from the crucible's circle, in place of the book photo. The writer's sign-in still has `book-bg-login.webp`; the same panel would suit it.
+- **Login backgrounds.** Done for both staff doors (2026-11-22): the admin's (`qbank-admin` admin-polish Phase 4) and the writer's, to match. An Ink `#1B1446` ground with the white mark, the qualifier (Studio, Writer) in Lilac `#CBC8FF`, and a quiet ring motif from the crucible's circle, in place of the book photo, which is gone from both apps.
 - **`docs/sample_paper.pdf`** needs re-exporting from the app with the new attribution.
 - **The X and Instagram images** wait for the handles to be registered.
 
