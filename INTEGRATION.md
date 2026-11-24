@@ -628,6 +628,28 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 5. Is the surface behind the `question-intelligence` flag beside, never instead of, its permission?
 6. Is the copy evidence, not prophecy, and free of model vocabulary?
 
+## Subscription contract (0081)
+
+**Status: Phase 0 (this section, the decision, the roadmap) done, 2026-11-24; nothing is built.** Roadmap [qbank-api/doc/roadmaps/organization-subscriptions.md](qbank-api/doc/roadmaps/organization-subscriptions.md), decision [0081](qbank-api/doc/decisions/0081-organization-subscriptions.md). Phases 1 to 3 are the API (model, enforcement, routes), 4 and 5 the admin (the superadmin's renewal screens, the customer's banner and history), 6 the homepage's Terms, Cancellation and FAQ wording, 7 the verification; Phase 8, a payment processor, waits for the owner.
+
+- **What it is.** Every customer organization has a paid-through date. A pure function in the API works out, on every read, whether it is `trial`, `active`, `grace` (full access, a banner), `read_only` (reads, downloads and exports of existing work only) or `lapsed` (refused, like a paused organization). The lengths are one superadmin setting, `subscription-policy`: 7 grace days and 30 read-only days by default. The superadmin records a payment, a goodwill extension or a trial as a row in an append-only ledger; the date is recomputed from the rows that are not voided. A processor's webhook will later call the same function.
+- **The one rule.** **The API decides, from the server's record, on every request.** No licence key, no expiry in the token, no frontend check that grants or refuses: a frontend shows the state it is told and hides only what the API would refuse.
+- **No date, no expiry.** `paidThrough: null` never lapses: the System organization, Community, and every organization that exists when this ships. Nothing changes for anyone until a superadmin records a first entry. A manual pause (`status: disabled`) stays separate and wins.
+- **Learners.** Nothing changes for a learner until the organization is `lapsed`; then its share links, institute page and Telegram posts behave exactly as a paused organization's do today (0034). `qbank-learner` and `qbank-writer` need no change: writers belong to the System organization, which never lapses.
+- **Endpoint seam (planned, Phase 3).** Superadmin, `organization:manage-licence`: `POST /organizations/:id/subscription/entries` `{ kind: payment | extension | trial, licence, billingPeriod?, periods?, days?, amountRupees?, reference?, receivedAt, note? }`, `POST /organizations/:id/subscription/entries/:entryId/void` `{ reason }`, `GET /organizations/:id/subscription`. The organization itself, `organization:read`: `GET /organizations/me/subscription` (state, dates, entries without `note` or `recordedBy`). `GET /organizations` gains `paidThrough` and `subscriptionState` per row, filterable by `state` and `expiringWithinDays`. A repeated `reference` from one source returns the existing entry.
+- **The 403 seam (planned, Phase 2).** A refusal keeps `message` (user copy, rendered verbatim) and adds `reason: "subscription_read_only" | "subscription_lapsed"`. The admin's `xior.js` reads `reason` to show the read-only explanation rather than "no access", and `useAuthGate.js` treats `subscription_lapsed` on `GET /users/me` like the paused message, ending the session.
+- **Enum seam (planned, Phase 1).** `subscriptionState` (`trial, active, grace, read_only, lapsed`) and `billingPeriod` (`monthly, annual`) on `/api/config`, mirrored in `qbank-admin/src/lib/enums.js` with `check:drift`. The entry kind and source stay internal until the admin renders them.
+- **Permission seam.** None new: writes are `organization:manage-licence` (in no role's defaults), reads `organization:read`.
+- **Copy seam (planned; final wording in Phases 2 and 5).** API: `Your workspace is read-only because your plan has ended. Renew it to make changes again.` and `Your organization's plan has ended. Please contact us to renew it.` Admin banner, per state: ends in N days, in grace, read-only. No em dashes.
+- **Deploy order.** The API first: an older admin ignores the new fields and shows the API's `message` in a toast; a newer admin against an older API gets 404 on the subscription routes and hides the Subscription tab. Then the homepage's wording, once the admin is out.
+
+### Before building a feature that writes
+
+1. Is the route a write (`POST`, `PUT`, `PATCH`, `DELETE`)? Under `read_only` it is refused unless it carries `@AllowWhenReadOnly()`. Add the decorator only if a customer whose plan has ended must still be able to do it (sign out, change a password, download or export what already exists). Creating, editing, publishing, sharing and posting stay closed.
+2. Does it run outside a request (a queue worker, a scheduled send)? The guard does not see it: check `OrganizationsService.isActive()` before each unit of work.
+3. Does it read the state? Read it through `subscriptionState()` or the API's answer, never by comparing dates in a frontend.
+4. Add the case to `probe:subscription-access`.
+
 ## The "tagging" handoff workflow
 
 The repos already hand work to each other through cross-repo notes. Formalize it — an agent working in one repo requests work from another by dropping a note the sibling repo's agent will pick up:
