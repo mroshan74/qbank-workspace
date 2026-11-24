@@ -652,11 +652,11 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Revenue (0082)
 
-**Status: Phase 0 (this section, the decision, the roadmap) done, 2026-11-24; nothing is built.** Roadmap [qbank-api/doc/roadmaps/revenue-dashboard.md](qbank-api/doc/roadmaps/revenue-dashboard.md), decision [0082](qbank-api/doc/decisions/0082-revenue-dashboard.md).
+**Status: Phases 0 and 1 done, 2026-11-24: the figures (`src/common/revenue.ts`) and the three routes are built in the API; the admin's page is next (Phase 2), its handoff `qbank-api/doc/handover/revenue-frontend-prompt.md`.** Roadmap [qbank-api/doc/roadmaps/revenue-dashboard.md](qbank-api/doc/roadmaps/revenue-dashboard.md), decision [0082](qbank-api/doc/decisions/0082-revenue-dashboard.md).
 
 - **What it is.** A superadmin Revenue page under MANAGE in the admin, over the 0081 ledger: collected this month and year, MRR, ARR, ARPA, the counts by state, renewals due in 7 and 30 days, at risk, new and lapsed this month, the mix by plan and period, every payment across customers, a CSV export. The per-organization Payments tab stays where it is; both open one Record payment dialog.
 - **The one rule.** **The API works the figures out** (`src/common/revenue.ts`); the admin draws them and does no arithmetic, exactly as it already reads states and dates (0081).
-- **Endpoint seam (planned, Phase 1).** All `@Roles(superadmin)`. `GET /subscriptions/summary?year=fy|calendar` (the figures, plus the renewal and at-risk rows with each organization's last payment, for Renew); `GET /subscriptions/entries?from&to&organizationId&kind&includeVoided&page&limit`; `GET /subscriptions/entries/export?from&to` (CSV). A customer owner gets 403 from all three.
+- **Endpoint seam (built, Phase 1).** All `@Roles(superadmin)`. Amounts in rupees; a renewal row carries `dueInDays` and the organization's `lastPayment`. `revenueYear` (`fy`, `calendar`) is on `/api/config`. `GET /subscriptions/summary?year=fy|calendar` (the figures, plus the renewal and at-risk rows with each organization's last payment, for Renew); `GET /subscriptions/entries?from&to&organizationId&kind&includeVoided&page&limit`; `GET /subscriptions/entries/export?from&to` (CSV). A customer owner gets 403 from all three.
 - **The year.** `fy` (April to March, the default) or `calendar`; the export follows it.
 - **Copy seam.** Collected and MRR are named apart on screen; "N payments have no amount" when some do. No em dashes.
 - **Deploy order.** The API first, then the admin.
