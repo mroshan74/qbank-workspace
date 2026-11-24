@@ -652,7 +652,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 ### Revenue (0082)
 
-**Status: Phases 0 to 4 done, 2026-11-24: the figures (`src/common/revenue.ts`) and the three routes are built in the API; the admin's Revenue page, its renewals worklist with one-click Renew, every payment and the export are built (Phases 2 and 3); a price list pre-fills a first payment (Phase 4); verification (Phase 5) is next.** Roadmap [qbank-api/doc/roadmaps/revenue-dashboard.md](qbank-api/doc/roadmaps/revenue-dashboard.md), decision [0082](qbank-api/doc/decisions/0082-revenue-dashboard.md).
+**Status: complete, 2026-11-24 (Phases 0 to 5): the figures (`src/common/revenue.ts`) and the three routes in the API; the admin's Revenue page, its renewals worklist with one-click Renew, every payment and the export (Phases 2 and 3); a price list that pre-fills a first payment (Phase 4); verified on the stack, the summary matching the pure function field by field (Phase 5). Nothing pushed.** Roadmap [qbank-api/doc/roadmaps/revenue-dashboard.md](qbank-api/doc/roadmaps/revenue-dashboard.md), decision [0082](qbank-api/doc/decisions/0082-revenue-dashboard.md).
 
 - **What it is.** A superadmin Revenue page under MANAGE in the admin, over the 0081 ledger: collected this month and year, MRR, ARR, ARPA, the counts by state, renewals due in 7 and 30 days, at risk, new and lapsed this month, the mix by plan and period, every payment across customers, a CSV export. The per-organization Payments tab stays where it is; both open one Record payment dialog.
 - **The one rule.** **The API works the figures out** (`src/common/revenue.ts`); the admin draws them and does no arithmetic, exactly as it already reads states and dates (0081).
