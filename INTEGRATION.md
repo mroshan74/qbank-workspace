@@ -560,7 +560,7 @@ The first screens that show a learner other learners. Owned by `qbank-api` (`src
 
 **Status: the plumbing is built in every app and the deploy runbook written (Phases 1 to 4 and 6, 2026-11-16); the first real flags (Phase 5) are next, by the owner's choice, from `qbank-api/doc/to-dos/feature-flags-first-flags.md`.** Roadmap [qbank-api/doc/roadmaps/feature-flags.md](qbank-api/doc/roadmaps/feature-flags.md), decision [0074](qbank-api/doc/decisions/0074-feature-flags.md). Phases 1 to 4 build the plumbing in the API, the admin, the learner and the writer; Phase 5 puts the first real features behind flags.
 
-- **What it is.** A platform-wide on/off switch per feature, no A/B, no per-organization value. The registry is code in the API, `src/common/feature-flags.ts` (key, label, description, default, which apps read it); the overrides are one global `app_settings` row. The API evaluates in memory through the OpenFeature NestJS SDK; each SPA reads every flag through the OpenFeature React SDK and the stock OFREP web provider, polling once a minute. The superadmin flips a flag on Manage > Feature flags in the admin.
+- **What it is.** A platform-wide on/off switch per feature, no A/B, no per-organization value. The registry is code in the API, `src/common/feature-flags.ts` (key, label, description, default, which apps read it); the overrides are one global `app_settings` row. The API evaluates in memory through the OpenFeature NestJS SDK; each SPA reads every flag through the OpenFeature React SDK and the stock OFREP web provider, polling once a minute. The superadmin flips a flag on Settings › Platform › Feature flags in the admin (Manage > Feature flags until 2026-11-26).
 - **The one rule.** **A flag never gates data access.** It decides whether a feature is offered; roles and permissions decide who may read or do what. The flags endpoint is public, so a flag's name and value are visible to anyone, including a learner who is not signed in. Anything that must stay unseen goes behind a permission, whose registry is not public.
 - **Endpoint seam.** `POST /api/ofrep/v1/evaluate/flags` (public, `Cache-Control: no-store`, `ETag`, `304` on `If-None-Match`; body `{ context? }` is accepted and ignored) → `{ flags: [{ key, value, reason: "STATIC", variant: "on" | "off" }] }`, every registered flag. Management, all `@Roles(superadmin)`: `GET /api/feature-flags` → `[{ key, label, description, apps, defaultValue, enabled, overridden }]`; `PUT /api/feature-flags/:key` `{ enabled }` and `DELETE /api/feature-flags/:key` (clear the override), both answering the full list. A route behind a flag that is off answers `404` with `This feature is not switched on.`; the guards run first, so an unauthenticated caller still gets `401`.
 - **The flag seam (a fifth mirror, like enums).** Each SPA keeps a `FLAGS` object in `src/lib/featureFlags.js` with the keys it reads, and its `check:drift` compares that to the public OFREP answer. Permissions and enums are unchanged by a flag.
@@ -1199,6 +1199,8 @@ phase adds its seams here as it lands.
    service functions in the admin. Their periods are the allowance periods, so the last
    one equals `/me/usage`. Copy: the admin's sidebar, Dashboard link and page title say
    **Workspace settings**, and its avatar menu and account modal say **Account settings**.
+   (Since 2026-11-26 both are one **Settings** group with Account, Organization, Papers and
+   Platform submenus: `qbank-admin/docs/roadmaps/settings-by-scope.md`.)
 
 ### The ordering rule, once more
 
