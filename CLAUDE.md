@@ -121,7 +121,7 @@ The question paper editor's round of owner-reported fixes (a workspace-wide wate
 - Who added questions fixed
 - Question bank without Compare a paper, one Year by year chart, and a topic by year heatmap
 
-It also touches `qbank-api` (Phases 2, 3, 4, 6 and 7). Phases 0 to 4 committed 2026-11-26 (the docs, short stat cards and the Dashboard order, Overview's ranked bar lists, the API's download search by trace code, paper name and paper code, Download history reworked with a trace dialog and Hide staff downloads); Phase 5 (Who added questions as a ranked bar list) built the same day, awaiting commit; each phase is committed only on the owner's approval, nothing pushed.
+It also touches `qbank-api` (Phases 2, 3, 4, 6 and 7). Phases 0 to 5 committed 2026-11-26 (the docs, short stat cards and the Dashboard order, Overview's ranked bar lists, the API's download search by trace code, paper name and paper code, Download history reworked with a trace dialog and Hide staff downloads, Who added questions as a ranked bar list); Phase 6 (Compare a paper removed with its two API routes, Year by year as one chart) built the same day, awaiting commit; each phase is committed only on the owner's approval, nothing pushed.
 
 **Not looking AI-made** comes from the owner's video "UI Libraries for Claude Code (Ban the AI Look)", on 2026-11-21. Its rules: a library per job, shadcn restyled rather than shipped as it comes, and one showpiece per page. There are two roadmaps, one per repo, and neither touches the API.
 - **Homepage:** owned by `qbank-homepage` in [qbank-homepage/docs/roadmaps/homepage-polish-2026-11.md](qbank-homepage/docs/roadmaps/homepage-polish-2026-11.md), on the branch `homepage-polish-2026-11`.
